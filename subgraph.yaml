@@ -392,11 +392,11 @@ dataSources:
   # DAO Vault Elon
   - kind: ethereum/contract
     name: DAOVaultElon
-    network: kovan
+    network: mainnet
     source:
-      address: "0xf03fa8553379d872b4e2Bafbc679409Fb82604c2"
+      address: "0x2D9a136cF87D599628BCBDfB6C4fe75Acd2A0aA8"
       abi: ElonApe
-      startBlock: 25413059
+      startBlock: 12722655
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
