@@ -130,6 +130,7 @@ type Transfer @entity {
   to: Account!
   value: BigInt!
   amount: BigInt!
+  amountInUSD: BigDecimal
   farmer: Farmer!
   totalSupply: BigInt!
   transaction: Transaction!

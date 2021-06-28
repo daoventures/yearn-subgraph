@@ -12,6 +12,7 @@ export {
   getOrCreateCompoundFarmer,
   getOrCreateHarvestFarmer,
   getOrCreateCitadelFarmer,
+  getOrCreateElonFarmer,
 } from "./yearn-farmer/vault";
 
 export {

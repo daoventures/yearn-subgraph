@@ -388,3 +388,40 @@ dataSources:
         - event: Withdraw(indexed address,address,uint256,uint256)
           handler: handleCitadelWithdraw
       file: ./src/mapping.ts
+
+  # DAO Vault Elon
+  - kind: ethereum/contract
+    name: DAOVaultElon
+    network: kovan
+    source:
+      address: "0xf03fa8553379d872b4e2Bafbc679409Fb82604c2"
+      abi: ElonApe
+      startBlock: 25413059
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: ElonApe
+          file: ./abis/ElonApeVault.json
+        - name: ElonApeStrategy
+          file: ./abis/ElonApeStrategy.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleElonShareTransfer
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleElonDeposit
+        - event: Withdraw(indexed address,indexed address,uint256,uint256)
+          handler: handleElonWithdraw
+      file: ./src/mapping.ts
