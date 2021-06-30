@@ -88,6 +88,12 @@ function handleFaangTransferTemplate( event: Transfer,
     transfer.totalSupply = vault.totalSupplyRaw;
     transfer.transaction = event.transaction.hash.toHexString();
 
+    // Amount of shares in USD, Get USDT <-> USD price from chain link
+    let proxyContract = EACAggregatorProxy.bind(Address.fromString("0x2ca5A90D34cA333661083F89D831f757A9A50148"));
+    let usdPrice = toDecimal(proxyContract.latestAnswer(), proxyContract.decimals());
+    let sharesInUSD = toDecimal(event.params.value, 18).times(usdPrice);
+    transfer.amountInUSD = sharesInUSD;
+
     transfer.save();
 }
 
