@@ -394,9 +394,9 @@ dataSources:
     name: DAOVaultFaangStonk
     network: kovan
     source:
-      address: "0xe97f5e5a755f8e633d23a2bae167b628dec22948"
+      address: "0xd6af81e5288be43137debf969d7f2c03482c8cc1"
       abi: FaangStonk
-      startBlock: 25680643
+      startBlock: 25867824
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
