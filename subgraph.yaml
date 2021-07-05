@@ -425,3 +425,42 @@ dataSources:
         - event: Withdraw(indexed address,indexed address,uint256,uint256)
           handler: handleElonWithdraw
       file: ./src/mapping.ts
+
+  # DAO Faang Stonk
+  - kind: ethereum/contract
+    name: DAOVaultFaangStonk
+    network: kovan
+    source:
+      address: "0xd6af81e5288be43137debf969d7f2c03482c8cc1"
+      abi: FaangStonk
+      startBlock: 25867824
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: FaangStonk
+          file: ./abis/FaangStonk.json
+        - name: FaangStonkStrategy
+          file: ./abis/FaangStonkStrategy.json
+        - name: EACAggregatorProxy
+          file: ./abis/EACAggregatorProxy.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleFaangShareTransfer
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleFaangDeposit
+        - event: Withdraw(indexed address,indexed address,uint256,uint256)
+          handler: handleFaangWithdrawal
+      file: ./src/mapping.ts
