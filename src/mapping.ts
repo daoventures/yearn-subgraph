@@ -64,7 +64,7 @@ function handleCitadelTransferTemplate(
   transfer.transaction = event.transaction.hash.toHexString();
   
   // Amount of shares in USD, Get ETH <-> USD price from chain link
-  let proxyContract = EACAggregatorProxy.bind(Address.fromString("0x9326BFA02ADD2366b30bacB125260Af641031331"));
+  let proxyContract = EACAggregatorProxy.bind(Address.fromString("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"));
   let usdPrice = toDecimal(proxyContract.latestAnswer(), proxyContract.decimals());
   let sharesInUSD = toDecimal(event.params.value, 18).times(usdPrice);
   transfer.amountInUSD = sharesInUSD;
@@ -89,7 +89,7 @@ function handleFaangTransferTemplate( event: Transfer,
     transfer.transaction = event.transaction.hash.toHexString();
 
     // Amount of shares in USD, Get USDT <-> USD price from chain link
-    let proxyContract = EACAggregatorProxy.bind(Address.fromString("0x2ca5A90D34cA333661083F89D831f757A9A50148"));
+    let proxyContract = EACAggregatorProxy.bind(Address.fromString("0x3E7d1eAB13ad0104d2750B8863b489D65364e32D"));
     let usdPrice = toDecimal(proxyContract.latestAnswer(), proxyContract.decimals());
     let sharesInUSD = toDecimal(event.params.value, 18).times(usdPrice);
     transfer.amountInUSD = sharesInUSD;
