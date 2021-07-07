@@ -1,0 +1,5 @@
+{
+    "network": "matic",
+    "moneyPrinterAddress": "0x529163109fFa7899D603074f7289E2fcf52D8bB8",
+    "moneyPrinterStartBlock": 15970970
+}

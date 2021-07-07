@@ -2278,3 +2278,13 @@ export function handleFaangShareTransfer(event: Transfer): void {
   fromAccount.save();
   toAccount.save();
 }
+
+/** Money Printer */
+export function handleMoneyPrinterDeposit(event: FaangDeposit): void { 
+  let transactionId = event.address
+    .toHexString()
+    .concat("-")
+    .concat(event.transaction.hash.toHexString())
+    .concat("-")
+    .concat(event.logIndex.toString());
+}

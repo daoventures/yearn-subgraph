@@ -21,6 +21,7 @@ import { HarvestFighter } from "../../../../generated/HarvestFighterUSDT/Harvest
 import { Citadel } from "../../../../generated/DAOVaultCitadel/Citadel";
 import { ElonApe } from "../../../../generated/DAOVaultElon/ElonApe";
 import { FaangStonk } from "../../../../generated/DAOVaultFaangStonk/FaangStonk";
+
 // Strategies
 import { YearnFarmerv2 } from "../../../../generated/YearnFighterUSDT/YearnFarmerv2";
 import { CompoundFarmer } from "../../../../generated/CompoundFighterUSDT/CompoundFarmer";
