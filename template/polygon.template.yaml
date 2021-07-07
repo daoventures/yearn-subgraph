@@ -32,9 +32,13 @@ dataSources:
           file: ./abis/matic/MoneyPrinter.json
         - name: MoneyPrinterStrategy
           file: ./abis/matic/MoneyPrinterStrategy.json
+        - name: EACAggregatorProxy
+          file: ./abis/matic/EACAggregatorProxy.json
       eventHandlers:
         - event: Deposit(indexed address,indexed address,uint256,uint256)
           handler: handleMoneyPrinterDeposit
         - event: Withdraw(indexed address,indexed address,uint256,uint256)
           handler: handleMoneyPrinterWithdraw
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleMoneyPrinterShareTransfer
       file: ./src/mapping.ts

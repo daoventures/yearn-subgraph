@@ -2,7 +2,7 @@ import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { Transfer } from "../generated/YearnFighterUSDT/YearnFighter";
 import { Deposit, Withdraw } from "../generated/DAOVaultCitadel/Citadel";
 import { Deposit as FaangDeposit, Withdraw as FaangWithdrawal, Transfer as FaangTransfer } from "../generated/DAOVaultFaangStonk/FaangStonk";
-import { Deposit as MoneyPrinterDeposit, Withdraw as MoneyPrinterWithdraw } from "../generated/MoneyPrinter/MoneyPrinterContract";
+import { Deposit as MoneyPrinterDeposit, Withdraw as MoneyPrinterWithdraw, Transfer as MoneyPrinterTransfer } from "../generated/MoneyPrinter/MoneyPrinterContract";
 import { Farmer } from "../generated/schema";
 import { BIGINT_ZERO, ZERO_ADDRESS } from "./utils/constants";
 import { toDecimal } from "./utils/decimals";
@@ -26,6 +26,7 @@ import {
   getOrCreateVaultWithdrawal,
 } from "./utils/helpers/yearn-farmer/vault";
 import { EACAggregatorProxy } from "../generated/DAOVaultCitadel/EACAggregatorProxy";
+import { EACAggregatorProxy as PolygonEACAggregatorProxy } from "../generated/MoneyPrinter/EACAggregatorProxy";
 
 function handleTransfer(
   event: Transfer,
@@ -99,6 +100,34 @@ function handleFaangTransferTemplate( event: Transfer,
 
     transfer.save();
 }
+
+function handleMoneyPrinterTransferTemplate( event: MoneyPrinterTransfer,
+  amount: BigInt,
+  fromId: string,
+  toId: string,
+  vault: Farmer,
+  transactionId: string): void {
+    let transfer = getOrCreateVaultTransfer(transactionId);
+
+    transfer.farmer = vault.id;
+    transfer.from = fromId;
+    transfer.to = toId;
+    transfer.value = event.params.value;
+    transfer.amount = amount;
+    transfer.totalSupply = vault.totalSupplyRaw;
+    transfer.transaction = event.transaction.hash.toHexString();
+
+    // Amount of shares in USD, Get USDT <-> USD price from chain link
+    // Testnet: 0x92C09849638959196E976289418e5973CC96d645
+    // Mainnet: 0x0A6513e40db6EB1b165753AD52E80663aeA50545
+    let proxyContract = PolygonEACAggregatorProxy.bind(Address.fromString("0x92C09849638959196E976289418e5973CC96d645"));
+    let usdPrice = toDecimal(proxyContract.latestAnswer(), proxyContract.decimals());
+    let sharesInUSD = toDecimal(event.params.value, 18).times(usdPrice);
+    transfer.amountInUSD = sharesInUSD;
+
+    transfer.save();
+}
+
 
 function handleDeposit(
   event: Transfer,
@@ -2559,6 +2588,146 @@ export function handleMoneyPrinterWithdraw(event: MoneyPrinterWithdraw): void {
     farmer.netDepositsRaw,
     underlyingToken.decimals
   );
+  // farmer.totalActiveShares = toDecimal(
+  //   farmer.totalActiveSharesRaw,
+  //   shareToken.decimals
+  // );
+
+  // farmer.save();
+  fromAccount.save();
+  toAccount.save();
+}
+
+export function handleMoneyPrinterShareTransfer(event: MoneyPrinterTransfer): void {
+  let farmer = getOrCreateMoneyPrinterFarmer(event.address);
+  farmer.underlyingToken = getOrCreateTokenPolygon(event.address).id; // Added deposit token
+  let fromAccount = getOrCreateAccount(event.params.from.toHexString());
+  let toAccount = getOrCreateAccount(event.params.to.toHexString());
+  // let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
+
+  let amount: BigInt;
+
+  // Actual value (amount) in underlying token
+  if (farmer.totalSupplyRaw != BIGINT_ZERO) {
+    amount = event.params.value
+      .times(farmer.poolRaw)
+      .div(farmer.totalSupplyRaw);
+  } else {
+    amount = event.params.value;
+  }
+
+  let toAccountBalance = getOrCreateAccountVaultBalance(
+    toAccount.id.concat("-").concat(farmer.id)
+  );
+  let fromAccountBalance = getOrCreateAccountVaultBalance(
+    fromAccount.id.concat("-").concat(farmer.id)
+  );
+
+  let transaction = getOrCreateTransaction(
+    event.transaction.hash.toHexString()
+  );
+  transaction.blockNumber = event.block.number;
+  transaction.timestamp = event.block.timestamp;
+  transaction.transactionHash = event.transaction.hash;
+  transaction.save();
+
+  farmer.transaction = transaction.id;
+
+  if (
+    event.params.from.toHexString() != ZERO_ADDRESS &&
+    event.params.to.toHexString() != ZERO_ADDRESS
+  ) {
+    handleMoneyPrinterTransferTemplate(
+      event,
+      amount,
+      fromAccount.id,
+      toAccount.id,
+      farmer,
+      transaction.id
+    );
+
+     // Update toAccount totals and balances
+     toAccountBalance.account = toAccount.id;
+     toAccountBalance.farmer = farmer.id;
+     toAccountBalance.shareToken = farmer.id;
+     toAccountBalance.underlyingToken = farmer.underlyingToken;
+     toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(
+       amount
+     );
+     toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(
+       event.params.value
+     );
+     toAccountBalance.totalReceivedRaw = toAccountBalance.totalReceivedRaw.plus(
+       amount
+     );
+     toAccountBalance.totalSharesReceivedRaw = toAccountBalance.totalSharesReceivedRaw.plus(
+       event.params.value
+     );
+ 
+    //  toAccountBalance.netDeposits = toDecimal(
+    //    toAccountBalance.netDepositsRaw,
+    //    shareToken.decimals
+    //  );
+    //  toAccountBalance.shareBalance = toDecimal(
+    //    toAccountBalance.shareBalanceRaw,
+    //    shareToken.decimals
+    //  );
+    //  toAccountBalance.totalReceived = toDecimal(
+    //    toAccountBalance.totalReceivedRaw,
+    //    shareToken.decimals
+    //  );
+    //  toAccountBalance.totalSharesReceived = toDecimal(
+    //    toAccountBalance.totalSharesReceivedRaw,
+    //    shareToken.decimals
+    //  );
+
+      // Update fromAccount totals and balances
+    fromAccountBalance.account = toAccount.id;
+    fromAccountBalance.farmer = farmer.id;
+    fromAccountBalance.shareToken = farmer.id;
+    fromAccountBalance.underlyingToken = farmer.underlyingToken;
+    fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(
+      amount
+    );
+    fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(
+      event.params.value
+    );
+    fromAccountBalance.totalSentRaw = fromAccountBalance.totalSentRaw.plus(
+      amount
+    );
+    fromAccountBalance.totalSharesSentRaw = fromAccountBalance.totalSharesSentRaw.plus(
+      event.params.value
+    );
+
+    // fromAccountBalance.netDeposits = toDecimal(
+    //   fromAccountBalance.netDepositsRaw,
+    //   shareToken.decimals
+    // );
+    // fromAccountBalance.shareBalance = toDecimal(
+    //   fromAccountBalance.shareBalanceRaw,
+    //   shareToken.decimals
+    // );
+    // fromAccountBalance.totalSent = toDecimal(
+    //   fromAccountBalance.totalSentRaw,
+    //   shareToken.decimals
+    // );
+    // fromAccountBalance.totalSharesSent = toDecimal(
+    //   fromAccountBalance.totalSharesSentRaw,
+    //   shareToken.decimals
+    // );
+
+    toAccountBalance.save();
+    fromAccountBalance.save();
+  }
+
+  farmer.netDepositsRaw = farmer.totalDepositedRaw.minus(
+    farmer.totalWithdrawnRaw
+  );
+  farmer.totalActiveSharesRaw = farmer.totalSharesMintedRaw.minus(
+    farmer.totalSharesBurnedRaw
+  );
+
+  // farmer.netDeposits = toDecimal(farmer.netDepositsRaw, shareToken.decimals);
   // farmer.totalActiveShares = toDecimal(
   //   farmer.totalActiveSharesRaw,
   //   shareToken.decimals
