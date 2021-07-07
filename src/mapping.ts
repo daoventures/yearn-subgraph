@@ -2,6 +2,7 @@ import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { Transfer } from "../generated/YearnFighterUSDT/YearnFighter";
 import { Deposit, Withdraw } from "../generated/DAOVaultCitadel/Citadel";
 import { Deposit as FaangDeposit, Withdraw as FaangWithdrawal, Transfer as FaangTransfer } from "../generated/DAOVaultFaangStonk/FaangStonk";
+import { Deposit as MoneyPrinterDeposit } from "../generated/MoneyPrinter/MoneyPrinterContract";
 import { Farmer } from "../generated/schema";
 import { BIGINT_ZERO, ZERO_ADDRESS } from "./utils/constants";
 import { toDecimal } from "./utils/decimals";
@@ -10,10 +11,12 @@ import {
   getOrCreateAccountVaultBalance,
   getOrCreateFarmer,
   getOrCreateToken,
+  getOrCreateTokenPolygon,
   getOrCreateCompoundFarmer,
   getOrCreateHarvestFarmer,
   getOrCreateCitadelFarmer,
   getOrCreateElonFarmer,
+  getOrCreateMoneyPrinterFarmer,
 } from "./utils/helpers";
 import {
   getOrCreateFaangFarmer,
@@ -158,8 +161,8 @@ function handleElonDepositTemplate(
   deposit.save();
 }
 
-function handleFaangDepositTemplate(
-    event: FaangDeposit,
+function handleMoneyPrinterDepositTemplate(
+    event: MoneyPrinterDeposit,
     amount: BigInt,
     amountInUSD: BigDecimal,
     accountId: string,
@@ -177,6 +180,27 @@ function handleFaangDepositTemplate(
   deposit.transaction = event.transaction.hash.toHexString();
 
   deposit.save();
+}
+
+function handleFaangDepositTemplate(
+  event: FaangDeposit,
+  amount: BigInt,
+  amountInUSD: BigDecimal,
+  accountId: string,
+  vault: Farmer,
+  transactionId: string
+): void {
+let deposit = getOrCreateVaultDeposit(transactionId);
+
+deposit.farmer = vault.id;
+deposit.account = accountId;
+deposit.amount = amount;
+deposit.amountInUSD = amountInUSD,
+deposit.shares = event.params.sharesMinted;
+deposit.totalSupply = vault.totalSupplyRaw;
+deposit.transaction = event.transaction.hash.toHexString();
+
+deposit.save();
 }
 
 function handleWithdrawal(
@@ -2280,11 +2304,128 @@ export function handleFaangShareTransfer(event: Transfer): void {
 }
 
 /** Money Printer */
-export function handleMoneyPrinterDeposit(event: FaangDeposit): void { 
+export function handleMoneyPrinterDeposit(event: MoneyPrinterDeposit): void { 
   let transactionId = event.address
     .toHexString()
     .concat("-")
     .concat(event.transaction.hash.toHexString())
     .concat("-")
     .concat(event.logIndex.toString());
+
+  let farmer = getOrCreateMoneyPrinterFarmer(event.address);
+  farmer.underlyingToken = getOrCreateTokenPolygon(event.params.token).id;
+  
+  let fromAccount = getOrCreateAccount(event.address.toHexString());
+  let toAccount = getOrCreateAccount(event.params.from.toHexString());
+  let underlyingToken = getOrCreateTokenPolygon(
+    Address.fromString(farmer.underlyingToken)
+  );
+  
+  // let shareToken = getOrCreateTokenPolygon(Address.fromString(farmer.shareToken));
+
+  let amount: BigInt;
+  if(farmer.totalSupplyRaw != BIGINT_ZERO) {
+    amount = event.params.sharesMinted
+      .times(farmer.poolRaw)
+      .div(farmer.totalSupplyRaw);
+  } else {
+    amount = event.params.sharesMinted;
+  }
+
+  // Amount In USD
+  let amountInUSD: BigInt= event.params.amount
+  let finalAmountInUSD: BigDecimal = toDecimal(amountInUSD, underlyingToken.decimals);
+
+  let toAccountBalance = getOrCreateAccountVaultBalance(
+    toAccount.id.concat("-").concat(farmer.id)
+  )
+
+  let transaction = getOrCreateTransaction(
+    event.transaction.hash.toHexString()
+  );
+  transaction.blockNumber = event.block.number;
+  transaction.timestamp = event.block.timestamp;
+  transaction.transactionHash = event.transaction.hash;
+  transaction.save();
+
+  farmer.transaction = transaction.id;
+
+  // Vault Deposit
+  handleMoneyPrinterDepositTemplate(
+    event,
+    amount,
+    finalAmountInUSD,
+    toAccount.id,
+    farmer,
+    transaction.id
+  );
+
+  toAccountBalance.account = toAccount.id;
+  toAccountBalance.farmer = farmer.id;
+  toAccountBalance.shareToken = farmer.id;
+  toAccountBalance.underlyingToken = farmer.underlyingToken;
+  toAccountBalance.totalDepositedRaw = toAccountBalance.totalDepositedRaw.plus(
+    amount
+  );
+  toAccountBalance.totalSharesMintedRaw = toAccountBalance.totalSharesMintedRaw.plus(
+    event.params.sharesMinted
+  );
+  toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(
+    amount
+  );
+  toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(
+    event.params.sharesMinted
+  );
+  toAccountBalance.totalDeposited = toDecimal(
+    toAccountBalance.totalDepositedRaw,
+    underlyingToken.decimals
+  );
+  // toAccountBalance.totalSharesMinted = toDecimal(
+  //   toAccountBalance.totalSharesMintedRaw,
+  //   shareToken.decimals
+  // );
+  toAccountBalance.netDeposits = toDecimal(
+    toAccountBalance.netDepositsRaw,
+    underlyingToken.decimals
+  );
+  // toAccountBalance.shareBalance = toDecimal(
+  //   toAccountBalance.shareBalanceRaw,
+  //   shareToken.decimals
+  // );
+
+  farmer.totalDepositedRaw = farmer.totalDepositedRaw.plus(amount);
+  farmer.totalSharesMintedRaw = farmer.totalSharesMintedRaw.plus(
+    event.params.sharesMinted
+  ); // TODO change to minted shares
+
+  farmer.totalDeposited = toDecimal(
+    farmer.totalDepositedRaw,
+    underlyingToken.decimals
+  );
+  // farmer.totalSharesMinted = toDecimal(
+  //   farmer.totalSharesMintedRaw,
+  //   shareToken.decimals
+  // );
+
+  toAccountBalance.save();
+
+  farmer.netDepositsRaw = farmer.totalDepositedRaw.minus(
+    farmer.totalWithdrawnRaw
+  );
+  farmer.totalActiveSharesRaw = farmer.totalSharesMintedRaw.minus(
+    farmer.totalSharesBurnedRaw
+  );
+
+  farmer.netDeposits = toDecimal(
+    farmer.netDepositsRaw,
+    underlyingToken.decimals
+  );
+  // farmer.totalActiveShares = toDecimal(
+  //   farmer.totalActiveSharesRaw,
+  //   shareToken.decimals
+  // );
+
+  //farmer.save();
+  fromAccount.save();
+  toAccount.save();
 }
