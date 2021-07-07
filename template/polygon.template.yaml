@@ -27,7 +27,7 @@ dataSources:
         - FarmerToken
       abis:
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ./abis/matic/MaticERC20.json
         - name: MoneyPrinterContract
           file: ./abis/matic/MoneyPrinter.json
         - name: MoneyPrinterStrategy
