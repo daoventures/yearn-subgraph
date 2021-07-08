@@ -41,4 +41,4 @@ dataSources:
           handler: handleMoneyPrinterWithdraw
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleMoneyPrinterShareTransfer
-      file: ./src/mapping.ts
+      file: ./src/map/moneyPrinterMapping.ts

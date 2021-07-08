@@ -535,11 +535,14 @@ export function getOrCreateMoneyPrinterFarmer(
     vault.vaultBalanceRaw = BIGINT_ZERO;
   }
 
+  let shareToken = getOrCreateToken(vaultAddress);
+  vault.shareToken = shareToken.id;
+
   if(update) {
     let strategyAddress = vaultContract.try_strategy();
     if(!strategyAddress.reverted) {
         // The vault itself is an ERC20
-        // let shareToken = getOrCreateTokenPolygon(vaultAddress);
+        // let shareToken = getOrCreateToken(vaultAddress);
 
         let totalSupply = vaultContract.try_totalSupply();
         vault.poolRaw = vaultContract.getValueInPool();
@@ -547,9 +550,7 @@ export function getOrCreateMoneyPrinterFarmer(
           ? totalSupply.value
           : vault.totalSupplyRaw;
         // vault.underlyingToken = underlyingToken.id;
-        // vault.shareToken = shareToken.id;
-        vault.shareToken  = vaultAddress.toHexString(); 
-  
+       
         vault.totalSupply = toDecimal(
           vault.totalSupplyRaw,
           vaultContract.decimals()
