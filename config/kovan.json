@@ -2,28 +2,40 @@
     "network": "kovan",
     "yearnFighterUSDTAddress": "0x6B150E9BD70E216775c8b73270E64e870a3110c1",
     "yearnFighterUSDTStartBlock": 24705457,
+
     "yearnFighterUSDCAddress": "0x6E15e283dc430eca010Ade8b11b5B377902d6e56",
     "yearnFighterUSDCStartBlock": 24705463,
+
     "yearnFighterDAIAddresss": "0x2428bFD238a3632552B343297c504F60283009eD",
     "yearnFighterDAIStartBlock": 24705468,
+
     "yearnFighterTUSDAddress": "0xEcCb98c36bfc8c49c6065d1cD90bcf1c6F02D4AD",
     "yearnFighterTUSDStartBlock": 24738659,
+
     "compoundFighterUSDTAddress": "0x5d102E0Bdf2037899E1FF2E8cc50987108533c52",
     "compoundFighterUSDTStartBlock": 24070008,
+
     "compoundFighterUSDCAddress": "0x05AB7659e6Ef9Ba1a5F790b402fD1688F01b003E",
     "compoundFighterUSDCStartBlock": 24069986,
+
     "compoundFighterDAIAddress": "0x47E565B1e23cdA3D6bB69e7ae398b884f5ADdc7D",
     "compoundFighterDAIStartBlock": 24069965,
+
     "harvestFighterUSDTAddress": "0x35880615bb18DA592FF0fEb0940ADE2c02249715",
     "harvestFighterUSDTStartBlock": 25281070,
+
     "harvestFighterUSDCAddress": "0x68b1C860300c4f7d577f08D8B3c3AEe23887b280",
     "harvestFighterUSDCStartBlock": 25281070,
+
     "harvestFighterDAIAddress": "0x6D7e8fA90C1ffdC019d691BAFC18D6362FdEeCd7",
     "harvestFighterDAIStartBlock": 25281070,
+
     "citadelAddress": "0x626C25cA5b86277f395c0E40DBdF51f2a302aB43",
     "citadelStartBlock": 25336169,
+
     "elonAddress": "0xf03fa8553379d872b4e2Bafbc679409Fb82604c2",
     "elonStartBlock": 25413059,
+    
     "faangAddress": "0xd6af81e5288be43137debf969d7f2c03482c8cc1",
     "faangStartBlock": 25867824
 }
