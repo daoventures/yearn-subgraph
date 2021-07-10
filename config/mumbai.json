@@ -1,5 +1,5 @@
 {
     "network": "mumbai",
-    "moneyPrinterAddress": "0x529163109fFa7899D603074f7289E2fcf52D8bB8",
-    "moneyPrinterStartBlock": 15970970
+    "moneyPrinterAddress": "0xdc2f0e17702f9083adc057893b2b1e273c11e09a",
+    "moneyPrinterStartBlock": 16133926
 }
