@@ -468,11 +468,11 @@ dataSources:
   # DAO Vault Cuban
   - kind: ethereum/contract
     name: DAOVaultCuban
-    network: kovan
+    network: mainnet
     source:
-      address: "0x5c304A6cB105E1BFf9805cA5CF072F1d2C3bEAC5"
+      address: "0x2AD9F8d4c24652Ea9F8A954F7E1FdB50a3bE1DFD"
       abi: CubanApe
-      startBlock: 25536976
+      startBlock: 12799447
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
