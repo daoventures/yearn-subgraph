@@ -9,9 +9,9 @@ dataSources:
     name: MoneyPrinter
     network: mumbai
     source:
-      address: '0x529163109fFa7899D603074f7289E2fcf52D8bB8'
+      address: '0x4f0bc6bd6beb231087781336bacd5613527ac63c'
       abi: MoneyPrinterContract
-      startBlock: 15970970
+      startBlock: 16259595
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
