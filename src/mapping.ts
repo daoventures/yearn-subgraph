@@ -181,24 +181,24 @@ function handleCubanDepositTemplate(
 }
 
 function handleFaangDepositTemplate(
-    event: FaangDeposit,
-    amount: BigInt,
-    amountInUSD: BigDecimal,
-    accountId: string,
-    vault: Farmer,
-    transactionId: string
+  event: FaangDeposit,
+  amount: BigInt,
+  amountInUSD: BigDecimal,
+  accountId: string,
+  vault: Farmer,
+  transactionId: string
 ): void {
-  let deposit = getOrCreateVaultDeposit(transactionId);
+let deposit = getOrCreateVaultDeposit(transactionId);
 
-  deposit.farmer = vault.id;
-  deposit.account = accountId;
-  deposit.amount = amount;
-  deposit.amountInUSD = amountInUSD,
-  deposit.shares = event.params.sharesMinted;
-  deposit.totalSupply = vault.totalSupplyRaw;
-  deposit.transaction = event.transaction.hash.toHexString();
+deposit.farmer = vault.id;
+deposit.account = accountId;
+deposit.amount = amount;
+deposit.amountInUSD = amountInUSD,
+deposit.shares = event.params.sharesMinted;
+deposit.totalSupply = vault.totalSupplyRaw;
+deposit.transaction = event.transaction.hash.toHexString();
 
-  deposit.save();
+deposit.save();
 }
 
 function handleWithdrawal(

@@ -8,7 +8,7 @@ import {
 } from "../../../../generated/schema";
 import { BIGDECIMAL_ZERO, BIGINT_ZERO } from "../../constants";
 import { toDecimal } from "../../decimals";
-import { getOrCreateToken } from "./token";
+import { getOrCreateToken, getOrCreateTokenPolygon } from "./token";
 import {
   getOrCreateEarnFarmerToken,
   getOrCreateVaultFarmerToken,
@@ -22,6 +22,8 @@ import { Citadel } from "../../../../generated/DAOVaultCitadel/Citadel";
 import { ElonApe } from "../../../../generated/DAOVaultElon/ElonApe";
 import { CubanApe } from "../../../../generated/DAOVaultCuban/CubanApe";
 import { FaangStonk } from "../../../../generated/DAOVaultFaangStonk/FaangStonk";
+import { MoneyPrinterContract as MoneyPrinter } from "../../../../generated/MoneyPrinter/MoneyPrinterContract"
+
 // Strategies
 import { YearnFarmerv2 } from "../../../../generated/YearnFighterUSDT/YearnFarmerv2";
 import { CompoundFarmer } from "../../../../generated/CompoundFighterUSDT/CompoundFarmer";
@@ -553,6 +555,76 @@ export function getOrCreateFaangFarmer(
         vaultContract.decimals()
       );
       vault.pool = toDecimal(vault.poolRaw, vaultContract.decimals());
+    }
+  }
+  return vault as Farmer;
+}
+
+export function getOrCreateMoneyPrinterFarmer(
+  vaultAddress : Address,
+  update: boolean = false
+): Farmer {
+  let vault = Farmer.load(vaultAddress.toHexString());
+  let vaultContract = MoneyPrinter.bind(vaultAddress);
+
+  if(vault == null) {
+    vault = new Farmer(vaultAddress.toHexString());
+
+    // Initialize parsed values as BigDecimal 0
+    vault.earnPricePerFullShare = BIGDECIMAL_ZERO;
+    vault.vaultPricePerFullShare = BIGDECIMAL_ZERO;
+    vault.netDeposits = BIGDECIMAL_ZERO;
+    vault.totalDeposited = BIGDECIMAL_ZERO;
+    vault.totalWithdrawn = BIGDECIMAL_ZERO;
+    vault.totalActiveShares = BIGDECIMAL_ZERO;
+    vault.totalSharesMinted = BIGDECIMAL_ZERO;
+    vault.totalSharesBurned = BIGDECIMAL_ZERO;
+    vault.earnBalance = BIGDECIMAL_ZERO;
+    vault.vaultBalance = BIGDECIMAL_ZERO;
+    vault.totalSupply = BIGDECIMAL_ZERO;
+    vault.totalEarnings = BIGDECIMAL_ZERO;
+    vault.pool = BIGDECIMAL_ZERO;
+    vault.earnBalance = BIGDECIMAL_ZERO;
+    vault.vaultBalance = BIGDECIMAL_ZERO;
+
+    // Initialize raw values as BigInt 0
+    vault.netDepositsRaw = BIGINT_ZERO;
+    vault.totalDepositedRaw = BIGINT_ZERO;
+    vault.totalWithdrawnRaw = BIGINT_ZERO;
+    vault.totalActiveSharesRaw = BIGINT_ZERO;
+    vault.totalSharesMintedRaw = BIGINT_ZERO;
+    vault.totalSharesBurnedRaw = BIGINT_ZERO;
+    vault.vaultBalanceRaw = BIGINT_ZERO;
+    vault.totalSupplyRaw = BIGINT_ZERO;
+    vault.totalEarningsRaw = BIGINT_ZERO;
+    vault.earnPricePerFullShareRaw = BIGINT_ZERO;
+    vault.vaultPricePerFullShareRaw = BIGINT_ZERO;
+    vault.poolRaw = BIGINT_ZERO;
+    vault.earnBalanceRaw = BIGINT_ZERO;
+    vault.vaultBalanceRaw = BIGINT_ZERO;
+  }
+
+  let shareToken = getOrCreateToken(vaultAddress);
+  vault.shareToken = shareToken.id;
+
+  if(update) {
+    let strategyAddress = vaultContract.try_strategy();
+    if(!strategyAddress.reverted) {
+        // The vault itself is an ERC20
+        // let shareToken = getOrCreateToken(vaultAddress);
+
+        let totalSupply = vaultContract.try_totalSupply();
+        vault.poolRaw = vaultContract.getValueInPool();
+        vault.totalSupplyRaw = !totalSupply.reverted
+          ? totalSupply.value
+          : vault.totalSupplyRaw;
+        // vault.underlyingToken = underlyingToken.id;
+       
+        vault.totalSupply = toDecimal(
+          vault.totalSupplyRaw,
+          vaultContract.decimals()
+        );
+        vault.pool = toDecimal(vault.poolRaw, vaultContract.decimals());
     }
   }
   return vault as Farmer;

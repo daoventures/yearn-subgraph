@@ -1,0 +1,504 @@
+specVersion: 0.0.2
+description: Subgraph for DAOVault
+schema:
+  file: ./schema.graphql
+
+dataSources:
+  # Yearn Series
+  ## Yearn Fighter USDT
+  - kind: ethereum/contract
+    name: YearnFighterUSDT
+    network: {{network}}
+    source:
+      address: '{{yearnFighterUSDTAddress}}'
+      startBlock: {{yearnFighterUSDTStartBlock}}
+      abi: YearnFighter
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: YearnFighter
+          file: ./abis/YearnFighter.json
+        - name: YearnFarmerv2
+          file: ./abis/YearnFarmerv2.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: yEarn
+          file: ./abis/yEarn.json
+        - name: yVault
+          file: ./abis/yVault.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleShareTransfer
+      file: ./src/mapping.ts
+
+  # Yearn Fighter USDC
+  - kind: ethereum/contract
+    name: YearnFighterUSDC
+    network: {{network}}
+    source:
+      address: '{{yearnFighterUSDCAddress}}'
+      startBlock: {{yearnFighterUSDCStartBlock}}
+      abi: YearnFighter
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: YearnFighter
+          file: ./abis/YearnFighter.json
+        - name: YearnFarmerv2
+          file: ./abis/YearnFarmerv2.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: yEarn
+          file: ./abis/yEarn.json
+        - name: yVault
+          file: ./abis/yVault.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleShareTransfer
+      file: ./src/mapping.ts
+
+  ## Yearn Fighter DAI
+  - kind: ethereum/contract
+    name: YearnFighterDAI
+    network: {{network}}
+    source:
+      address: '{{yearnFighterDAIAddresss}}'
+      startBlock: {{yearnFighterDAIStartBlock}}
+      abi: YearnFighter
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: YearnFighter
+          file: ./abis/YearnFighter.json
+        - name: YearnFarmerv2
+          file: ./abis/YearnFarmerv2.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: yEarn
+          file: ./abis/yEarn.json
+        - name: yVault
+          file: ./abis/yVault.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleShareTransfer
+      file: ./src/mapping.ts
+
+  ## Yearn Fighter TUSD
+  - kind: ethereum/contract
+    name: YearnFighterTUSD
+    network: {{network}}
+    source:
+      address: '{{yearnFighterTUSDAddress}}'
+      startBlock: {{yearnFighterTUSDStartBlock}}
+      abi: YearnFighter
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: YearnFighter
+          file: ./abis/YearnFighter.json
+        - name: YearnFarmerv2
+          file: ./abis/YearnFarmerv2.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: yEarn
+          file: ./abis/yEarn.json
+        - name: yVault
+          file: ./abis/yVault.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleShareTransfer
+      file: ./src/mapping.ts
+  # Compound Series
+  ## Compound Fighter USDT
+  - kind: ethereum/contract
+    name: CompoundFighterUSDT
+    network: {{network}}
+    source:
+      address: '{{compoundFighterUSDTAddress}}'
+      startBlock: {{compoundFighterUSDTStartBlock}}
+      abi: CompoundFighter
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: CompoundFighter
+          file: ./abis/CompoundFighter.json
+        - name: CompoundFarmer
+          file: ./abis/CompoundFarmer.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleCompoundShareTransfer
+      file: ./src/mapping.ts
+  ## Compound Fighter USDC
+  - kind: ethereum/contract
+    name: CompoundFighterUSDC
+    network: {{network}}
+    source:
+      address: '{{compoundFighterUSDCAddress}}'
+      startBlock: {{compoundFighterUSDCStartBlock}}
+      abi: CompoundFighter
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: CompoundFighter
+          file: ./abis/CompoundFighter.json
+        - name: CompoundFarmer
+          file: ./abis/CompoundFarmer.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleCompoundShareTransfer
+      file: ./src/mapping.ts
+  ## Compound Fighter DAI
+  - kind: ethereum/contract
+    name: CompoundFighterDAI
+    network: {{network}}
+    source:
+      address: '{{compoundFighterDAIAddress}}'
+      startBlock: {{compoundFighterDAIStartBlock}}
+      abi: CompoundFighter
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: CompoundFighter
+          file: ./abis/CompoundFighter.json
+        - name: CompoundFarmer
+          file: ./abis/CompoundFarmer.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleCompoundShareTransfer
+      file: ./src/mapping.ts
+
+  # Harvest Series
+  ## Harvest Fighter USDT
+  - kind: ethereum/contract
+    name: HarvestFighterUSDT
+    network: {{network}}
+    source:
+      address: '{{harvestFighterUSDTAddress}}'
+      abi: HarvestFighter
+      startBlock: {{harvestFighterUSDCStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: HarvestFighter
+          file: ./abis/HarvestFighter.json
+        - name: HarvestFarmer
+          file: ./abis/HarvestFarmer.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleHarvestShareTransfer
+      file: ./src/mapping.ts
+
+  ## Harvest Fighter USDC
+  - kind: ethereum/contract
+    name: HarvestFighterUSDC
+    network: {{network}}
+    source:
+      address: '{{harvestFighterUSDCAddress}}'
+      abi: HarvestFighter
+      startBlock: {{harvestFighterUSDCStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: HarvestFighter
+          file: ./abis/HarvestFighter.json
+        - name: HarvestFarmer
+          file: ./abis/HarvestFarmer.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleHarvestShareTransfer
+      file: ./src/mapping.ts
+
+  ## Harvest Fighter DAI
+  - kind: ethereum/contract
+    name: HarvestFighterDAI
+    network: {{network}}
+    source:
+      address: '{{harvestFighterDAIAddress}}'
+      abi: HarvestFighter
+      startBlock: {{harvestFighterDAIStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: HarvestFighter
+          file: ./abis/HarvestFighter.json
+        - name: HarvestFarmer
+          file: ./abis/HarvestFarmer.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleHarvestShareTransfer
+      file: ./src/mapping.ts
+
+  # DAO Vault Citadel
+  - kind: ethereum/contract
+    name: DAOVaultCitadel
+    network: {{network}}
+    source:
+      address: '{{citadelAddress}}'
+      abi: Citadel
+      startBlock: {{citadelStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: Citadel
+          file: ./abis/Citadel.json
+        - name: CitadelStrategy
+          file: ./abis/CitadelStrategy.json
+        - name: EACAggregatorProxy
+          file: ./abis/EACAggregatorProxy.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleCitadelShareTransfer
+        - event: Deposit(indexed address,address,uint256,uint256)
+          handler: handleCitadelDeposit
+        - event: Withdraw(indexed address,address,uint256,uint256)
+          handler: handleCitadelWithdraw
+      file: ./src/mapping.ts
+
+  # DAO Vault Elon
+  - kind: ethereum/contract
+    name: DAOVaultElon
+    network: {{network}}
+    source:
+      address: '{{elonAddress}}'
+      abi: ElonApe
+      startBlock: 25413059
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: ElonApe
+          file: ./abis/ElonApeVault.json
+        - name: ElonApeStrategy
+          file: ./abis/ElonApeStrategy.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleElonShareTransfer
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleElonDeposit
+        - event: Withdraw(indexed address,indexed address,uint256,uint256)
+          handler: handleElonWithdraw
+      file: ./src/mapping.ts
+
+  # DAO Faang Stonk
+  - kind: ethereum/contract
+    name: DAOVaultFaangStonk
+    network: {{network}}
+    source:
+      address: '{{faangAddress}}'
+      abi: FaangStonk
+      startBlock: {{faangStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: FaangStonk
+          file: ./abis/FaangStonk.json
+        - name: FaangStonkStrategy
+          file: ./abis/FaangStonkStrategy.json
+        - name: EACAggregatorProxy
+          file: ./abis/EACAggregatorProxy.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleFaangShareTransfer
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleFaangDeposit
+        - event: Withdraw(indexed address,indexed address,uint256,uint256)
+          handler: handleFaangWithdrawal
+      file: ./src/mapping.ts
+
+  # DAO Vault Cuban
+  - kind: ethereum/contract
+    name: DAOVaultCuban
+    network: {{network}}
+    source:
+      address: '{{cubanAddress}}'
+      abi: CubanApe
+      startBlock: {{cubanStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: CubanApe
+          file: ./abis/CubanApeVault.json
+        - name: CubanApeStrategy
+          file: ./abis/CubanApeStrategy.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleCubanShareTransfer
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleCubanDeposit
+        - event: Withdraw(indexed address,indexed address,uint256,uint256)
+          handler: handleCubanWithdraw
+      file: ./src/mapping.ts
+  
