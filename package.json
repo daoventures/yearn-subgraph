@@ -9,7 +9,7 @@
     "prepare:matic": "mustache config/matic.json template/polygon.template.yaml > subgraph.yaml",
     "prepare:mumbai": "mustache config/mumbai.json template/polygon.template.yaml > subgraph.yaml",
     "deploy:ethereum": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ waikahkwan/farmers-pool",
-    "deploy:polygon": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ waikahkwan/dao-polygon",
+    "deploy:polygon": "graph deploy --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ daoventures/daoploygon",
     "create-local": "graph create --node http://localhost:8020/ waikahkwan/farmers-pool",
     "remove-local": "graph remove --node http://localhost:8020/ waikahkwan/farmers-pool",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 waikahkwan/farmers-pool"
