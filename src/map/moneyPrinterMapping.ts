@@ -83,7 +83,7 @@ function handleMoneyPrinterTransferTemplate( event: MoneyPrinterTransfer,
       // Amount of shares in USD, Get USDT <-> USD price from chain link
       // Testnet: 0x92C09849638959196E976289418e5973CC96d645
       // Mainnet: 0x0A6513e40db6EB1b165753AD52E80663aeA50545
-      let proxyContract = PolygonEACAggregatorProxy.bind(Address.fromString("0x92C09849638959196E976289418e5973CC96d645"));
+      let proxyContract = PolygonEACAggregatorProxy.bind(Address.fromString("0x0A6513e40db6EB1b165753AD52E80663aeA50545"));
       let usdPrice = toDecimal(proxyContract.latestAnswer(), proxyContract.decimals());
       let sharesInUSD = toDecimal(event.params.value, 18).times(usdPrice);
       transfer.amountInUSD = sharesInUSD;
