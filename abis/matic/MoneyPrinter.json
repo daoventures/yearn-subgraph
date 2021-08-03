@@ -799,11 +799,76 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "_biconomy",
+        "type": "address"
+      }
+    ],
+    "name": "setBiconomy",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_communityWallet",
         "type": "address"
       }
     ],
     "name": "setCommunityWallet",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_percentage",
+        "type": "uint256"
+      }
+    ],
+    "name": "setCustomNetworkFeePerc",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_customNetworkFeeTier",
+        "type": "uint256"
+      }
+    ],
+    "name": "setCustomNetworkFeeTier",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_networkFeePerc",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "setNetworkFeePerc",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_networkFeeTier2",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "setNetworkFeeTier2",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -817,6 +882,19 @@
       }
     ],
     "name": "setPendingStrategy",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_percentage",
+        "type": "uint256"
+      }
+    ],
+    "name": "setProfitSharingFeePerc",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
