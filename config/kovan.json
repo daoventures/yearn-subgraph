@@ -40,5 +40,32 @@
     "faangStartBlock": 25867824,
 
     "cubanAddress": "0x5c304A6cB105E1BFf9805cA5CF072F1d2C3bEAC5",
-    "cubanStartBlock": 25536976
+    "cubanStartBlock": 25536976,
+    
+    "earnLUSDAddress": "0x47bb78583fea8ab0f1d8ca94750fe4c266ffb8f1",
+    "earnLUSDStartBlock": 26381362,
+
+    "earnBUSDAddress": "0x47bb78583fea8ab0f1d8ca94750fe4c266ffb8f1",
+    "earnBUSDStartBlock": 26381362,
+
+    "earnALUSDAddress": "0x47bb78583fea8ab0f1d8ca94750fe4c266ffb8f1",
+    "earnALUSDStartBlock": 26381362,
+
+    "earnUSTAddress": "0x47bb78583fea8ab0f1d8ca94750fe4c266ffb8f1",
+    "earnUSTStartBlock": 26381362,
+
+    "earnUSDNAddress": "0x47bb78583fea8ab0f1d8ca94750fe4c266ffb8f1",
+    "earnUSDNtartBlock": 26381362,
+
+    "earnSUSDAddress": "0x47bb78583fea8ab0f1d8ca94750fe4c266ffb8f1",
+    "earnSUSDStartBlock": 26381362,
+
+    "earnYearnAddress": "0x47bb78583fea8ab0f1d8ca94750fe4c266ffb8f1",
+    "earnYearnStartBlock": 26381362,
+
+    "earnAAVEAddress": "0x47bb78583fea8ab0f1d8ca94750fe4c266ffb8f1",
+    "earnAAVEStartBlock": 26381362,
+
+    "earnSAAVEAddress": "0x47bb78583fea8ab0f1d8ca94750fe4c266ffb8f1",
+    "earnSAAVEStartBlock": 26381362
 }
