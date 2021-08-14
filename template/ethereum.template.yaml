@@ -5,7 +5,7 @@ schema:
 
 dataSources:
   # Yearn Series
-  ## Yearn Fighter USDT
+  # Yearn Fighter USDT
   - kind: ethereum/contract
     name: YearnFighterUSDT
     network: {{network}}
@@ -501,4 +501,42 @@ dataSources:
         - event: Withdraw(indexed address,indexed address,uint256,uint256)
           handler: handleCubanWithdraw
       file: ./src/mapping.ts
+
+   # DAO Vault Earn LUSD
+   # we use ABI from ANYToken for underlying LP Token for test environment
+   # should use corresponding LP token for each pool for main environment
+   # TODO: open another branch for token ABI control
+  - kind: ethereum/contract
+    name: DAOVaultEarnLUSD
+    network: {{network}}
+    source:
+      address: '{{earnLUSDAddress}}'
+      abi: DAOEarn
+      startBlock: {{earnLUSDStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: DAOEarn
+          file: ./abis/daoEarn/DAOEarnVault.json
+        - name: DAOEarnUnderlyingToken
+          file: ./abis/daoEarn/DAOEarnUnderlyingToken.json
+        - name: DAOEarnStrategy
+          file: ./abis/daoEarn/DAOEarnStrategy.json
+      eventHandlers:
+        - event: Deposit(indexed address,uint256,uint256)
+          handler: handleDAOEarnDeposit
+      file: ./src/map/daoEarnMapping.ts
   

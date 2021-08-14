@@ -3,6 +3,8 @@ import { ERC20 } from "../../../../generated/YearnFighterUSDT/ERC20";
 import { ERC20  as ERC20Polygon} from "../../../../generated/MoneyPrinter/ERC20";
 import { Token } from "../../../../generated/schema";
 import { DEFAULT_DECIMALS } from "../../decimals";
+import { DAOEarn } from "../../../../generated/DAOVaultEarnLUSD/DAOEarn";
+import { DAOEarnUnderlyingToken } from "../../../../generated/DAOVaultEarnLUSD/DAOEarnUnderlyingToken";
 
 export function getOrCreateToken(
   tokenAddress: Address,
@@ -64,7 +66,39 @@ export function getOrCreateTokenPolygon(
       token.save();
     }
   }
-
+  
   return token as Token;
 }
 
+export function getOrCreateDAOEarnLPToken(
+  vaultAddress: Address,
+  persist: boolean = true
+) : Token {
+  let vaultContract = DAOEarn.bind(vaultAddress);
+  let underlyingTokenAddress = vaultContract.lpToken();
+
+  let token = Token.load(underlyingTokenAddress.toHexString());
+
+  if (token === null) {
+    let underlyingTokenContract = DAOEarnUnderlyingToken.bind(underlyingTokenAddress);
+    token = new Token(underlyingTokenAddress.toHexString());
+    token.address = underlyingTokenAddress;
+
+    let tokenName = underlyingTokenContract.try_name();
+    let tokenSymbol = underlyingTokenContract.try_symbol();
+    let tokenDecimals = underlyingTokenContract.try_decimals();
+
+    token.name = !tokenName.reverted ? tokenName.value : "";
+    token.symbol = !tokenSymbol.reverted ? tokenSymbol.value : "";
+    token.decimals = !tokenDecimals.reverted
+      ? tokenDecimals.value
+      : DEFAULT_DECIMALS;
+
+    if (persist) {
+      token.save();
+    }
+  }
+
+  return token as Token;
+}
+ 

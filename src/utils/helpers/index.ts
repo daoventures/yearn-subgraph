@@ -1,6 +1,7 @@
 export {
   getOrCreateToken,
-  getOrCreateTokenPolygon
+  getOrCreateTokenPolygon,
+  getOrCreateDAOEarnLPToken
 } from "./yearn-farmer/token";
 
 export {
@@ -15,7 +16,8 @@ export {
   getOrCreateCitadelFarmer,
   getOrCreateElonFarmer,
   getOrCreateCubanFarmer,
-  getOrCreateMoneyPrinterFarmer
+  getOrCreateMoneyPrinterFarmer,
+  getOrCreateDAOEarnFarmer
 } from "./yearn-farmer/vault";
 
 export {
