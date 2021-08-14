@@ -564,7 +564,7 @@ export function getOrCreateFaangFarmer(
 
 export function getOrCreateMoneyPrinterFarmer(
   vaultAddress : Address,
-  update: boolean = false
+  update: boolean = true
 ): Farmer {
   let vault = Farmer.load(vaultAddress.toHexString());
   let vaultContract = MoneyPrinter.bind(vaultAddress);
@@ -634,7 +634,7 @@ export function getOrCreateMoneyPrinterFarmer(
 
 export function getOrCreateDAOEarnFarmer(
   vaultAddress: Address,
-  update: boolean = false
+  update: boolean = true
 ): Farmer {
   let vault = Farmer.load(vaultAddress.toHexString());
   let vaultContract = DAOEarn.bind(vaultAddress);
