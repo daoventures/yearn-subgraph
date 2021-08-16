@@ -12,7 +12,8 @@ import {
 import {
     getOrCreateTransaction,
     getOrCreateVaultDeposit,
-    getOrCreateVaultTransfer
+    getOrCreateVaultTransfer,
+    getOrCreateVaultWithdrawal
 } from "../utils/helpers/yearn-farmer/vault";
 import { toDecimal } from "../utils/decimals";
 import { DAOEarn } from "../../generated/DAOVaultEarnLUSD/DAOEarn";
@@ -38,7 +39,7 @@ function handleDAOEarnDepositTemplate(
     deposit.save();
 }
 
-function handleMoneyPrinterWithdrawalTemplate(
+function handleDAOEarnWithdrawalTemplate(
     event: Withdraw,
     amount: BigInt,
     amountInUSD: BigDecimal,
@@ -46,17 +47,17 @@ function handleMoneyPrinterWithdrawalTemplate(
     vault: Farmer,
     transactionId: string
 ): void {
-    let deposit = getOrCreateVaultDeposit(transactionId);
+    let withdraw = getOrCreateVaultWithdrawal(transactionId);
 
-    deposit.farmer = vault.id;
-    deposit.account = accountId;
-    deposit.amount = amount;
-    deposit.amountInUSD = amountInUSD,
-        deposit.shares = event.params.sharesBurn;
-    deposit.totalSupply = vault.totalSupplyRaw;
-    deposit.transaction = event.transaction.hash.toHexString();
+    withdraw.farmer = vault.id;
+    withdraw.account = accountId;
+    withdraw.amount = amount;
+    withdraw.amountInUSD = amountInUSD;
+    withdraw.shares = event.params.sharesBurn;
+    withdraw.totalSupply = vault.totalSupplyRaw;
+    withdraw.transaction = event.transaction.hash.toHexString();
 
-    deposit.save();
+    withdraw.save();
 }
 
 function handleDAOEarnShareTransferTemplate(
@@ -89,13 +90,6 @@ function handleDAOEarnShareTransferTemplate(
 
 // Deposit Event Handling
 export function handleDAOEarnDeposit(event: Deposit): void {
-    let transactionId = event.address
-        .toHexString()
-        .concat("-")
-        .concat(event.transaction.hash.toHexString())
-        .concat("-")
-        .concat(event.logIndex.toString());
-
     let farmer = getOrCreateDAOEarnFarmer(event.address);
     farmer.underlyingToken = getOrCreateDAOEarnLPToken(event.address).id;
 
@@ -241,95 +235,93 @@ export function handleDAOEarnWithdrawal(event: Withdraw): void {
         fromAccount.id.concat("-").concat(farmer.id)
     );
 
-    // let transaction = getOrCreateTransaction(
-    //     event.transaction.hash.toHexString()
-    // );
-    // transaction.blockNumber = event.block.number;
-    // transaction.timestamp = event.block.timestamp;
-    // transaction.transactionHash = event.transaction.hash;
-    // transaction.save();
+    let transaction = getOrCreateTransaction(
+        event.transaction.hash.toHexString()
+    );
+    transaction.blockNumber = event.block.number;
+    transaction.timestamp = event.block.timestamp;
+    transaction.transactionHash = event.transaction.hash;
+    transaction.save();
 
-    // // Stop here
-    // farmer.transaction = transaction.id;
-    // // Vault withdraw
-    // handleMoneyPrinterWithdrawalTemplate(
-    //     event,
-    //     amount,
-    //     finalAmountInUSD,
-    //     fromAccount.id,
-    //     farmer,
-    //     transaction.id
-    // );
+    farmer.transaction = transaction.id;
+    // Vault withdraw
+    handleDAOEarnWithdrawalTemplate(
+        event,
+        amount,
+        finalAmountInUSD,
+        fromAccount.id,
+        farmer,
+        transaction.id
+    );
 
-    // fromAccountBalance.account = fromAccount.id;
-    // fromAccountBalance.farmer = farmer.id;
-    // fromAccountBalance.shareToken = farmer.id;
-    // fromAccountBalance.underlyingToken = farmer.underlyingToken;
-    // fromAccountBalance.totalWithdrawnRaw = fromAccountBalance.totalWithdrawnRaw.plus(
-    //     amount
-    // );
-    // fromAccountBalance.totalSharesBurnedRaw = fromAccountBalance.totalSharesBurnedRaw.plus(
-    //     event.params.sharesBurn
-    // );
-    // fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(
-    //     amount
-    // );
-    // fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(
-    //     event.params.sharesBurn
-    // );
+    fromAccountBalance.account = fromAccount.id;
+    fromAccountBalance.farmer = farmer.id;
+    fromAccountBalance.shareToken = farmer.id;
+    fromAccountBalance.underlyingToken = farmer.underlyingToken;
+    fromAccountBalance.totalWithdrawnRaw = fromAccountBalance.totalWithdrawnRaw.plus(
+        amount
+    );
+    fromAccountBalance.totalSharesBurnedRaw = fromAccountBalance.totalSharesBurnedRaw.plus(
+        event.params.sharesBurn
+    );
+    fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(
+        amount
+    );
+    fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(
+        event.params.sharesBurn
+    );
 
-    // fromAccountBalance.totalWithdrawn = toDecimal(
-    //     fromAccountBalance.totalWithdrawnRaw,
-    //     underlyingToken.decimals
-    // );
-    // fromAccountBalance.totalSharesBurned = toDecimal(
-    //     fromAccountBalance.totalSharesBurnedRaw,
-    //     shareToken.decimals
-    // );
-    // fromAccountBalance.netDeposits = toDecimal(
-    //     fromAccountBalance.netDepositsRaw,
-    //     underlyingToken.decimals
-    // );
-    // fromAccountBalance.shareBalance = toDecimal(
-    //     fromAccountBalance.shareBalanceRaw,
-    //     shareToken.decimals
-    // );
-    // farmer.totalWithdrawnRaw = farmer.totalWithdrawnRaw.plus(amount);
-    // farmer.totalSharesBurnedRaw = farmer.totalSharesBurnedRaw.plus(
-    //     event.params.sharesBurn
-    // );
+    fromAccountBalance.totalWithdrawn = toDecimal(
+        fromAccountBalance.totalWithdrawnRaw,
+        underlyingToken.decimals
+    );
+    fromAccountBalance.totalSharesBurned = toDecimal(
+        fromAccountBalance.totalSharesBurnedRaw,
+        shareToken.decimals
+    );
+    fromAccountBalance.netDeposits = toDecimal(
+        fromAccountBalance.netDepositsRaw,
+        underlyingToken.decimals
+    );
+    fromAccountBalance.shareBalance = toDecimal(
+        fromAccountBalance.shareBalanceRaw,
+        shareToken.decimals
+    );
+    farmer.totalWithdrawnRaw = farmer.totalWithdrawnRaw.plus(amount);
+    farmer.totalSharesBurnedRaw = farmer.totalSharesBurnedRaw.plus(
+        event.params.sharesBurn
+    );
 
-    // farmer.totalWithdrawn = toDecimal(
-    //     farmer.totalWithdrawnRaw,
-    //     underlyingToken.decimals
-    // );
-    // farmer.totalSharesBurned = toDecimal(
-    //     farmer.totalSharesBurnedRaw,
-    //     shareToken.decimals
-    // );
+    farmer.totalWithdrawn = toDecimal(
+        farmer.totalWithdrawnRaw,
+        underlyingToken.decimals
+    );
+    farmer.totalSharesBurned = toDecimal(
+        farmer.totalSharesBurnedRaw,
+        shareToken.decimals
+    );
 
-    // fromAccountBalance.save();
-    // // Stop here
+    fromAccountBalance.save();
+   
+    farmer.netDepositsRaw = farmer.totalDepositedRaw.minus(
+        farmer.totalWithdrawnRaw
+    );
+    farmer.totalActiveSharesRaw = farmer.totalSharesMintedRaw.minus(
+        farmer.totalSharesBurnedRaw
+    );
 
-    // farmer.netDepositsRaw = farmer.totalDepositedRaw.minus(
-    //     farmer.totalWithdrawnRaw
-    // );
-    // farmer.totalActiveSharesRaw = farmer.totalSharesMintedRaw.minus(
-    //     farmer.totalSharesBurnedRaw
-    // );
+    farmer.netDeposits = toDecimal(
+        farmer.netDepositsRaw,
+        underlyingToken.decimals
+    );
+    farmer.totalActiveShares = toDecimal(
+        farmer.totalActiveSharesRaw,
+        shareToken.decimals
+    );
 
-    // farmer.netDeposits = toDecimal(
-    //     farmer.netDepositsRaw,
-    //     underlyingToken.decimals
-    // );
-    // farmer.totalActiveShares = toDecimal(
-    //     farmer.totalActiveSharesRaw,
-    //     shareToken.decimals
-    // );
-
-    // farmer.save();
-    // fromAccount.save();
-    // toAccount.save();
+    farmer.save();
+    fromAccount.save();
+    toAccount.save();
 }
 
 // Share Transfer Handling

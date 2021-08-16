@@ -683,15 +683,18 @@ export function getOrCreateDAOEarnFarmer(
     if (!strategyAddress.reverted) {
       // The vault itself is an ERC20
       let totalSupply = vaultContract.try_totalSupply();
+      vault.totalSupplyRaw = !totalSupply.reverted
+        ? totalSupply.value
+        : vault.totalSupplyRaw;
       vault.totalSupply = toDecimal(
         vault.totalSupplyRaw,
         vaultContract.decimals()
       );
 
-      vault.poolRaw = vaultContract.getAllPoolInUSD();
-      vault.totalSupplyRaw = !totalSupply.reverted
-        ? totalSupply.value
-        : vault.totalSupplyRaw;
+      let poolRaw = vaultContract.try_getAllPoolInUSD();
+      vault.poolRaw =  !poolRaw.reverted
+        ? poolRaw.value
+        : vault.poolRaw;
       vault.pool = toDecimal(vault.poolRaw, vaultContract.decimals());
     }
   }

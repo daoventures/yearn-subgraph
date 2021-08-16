@@ -502,10 +502,10 @@ dataSources:
           handler: handleCubanWithdraw
       file: ./src/mapping.ts
 
-   # DAO Vault Earn LUSD
-   # we use ABI from ANYToken for underlying LP Token for test environment
-   # should use corresponding LP token for each pool for main environment
-   # TODO: open another branch for token ABI control
+  # DAO Vault Earn LUSD
+  # we use ABI from ANYToken for underlying LP Token for test environment
+  # should use corresponding LP token for each pool for main environment
+  # TODO: open another branch for token ABI control
   - kind: ethereum/contract
     name: DAOVaultEarnLUSD
     network: {{network}}
@@ -538,5 +538,6 @@ dataSources:
       eventHandlers:
         - event: Deposit(indexed address,uint256,uint256)
           handler: handleDAOEarnDeposit
+        - event: Withdraw(indexed address,uint256,uint256)
+          handler: handleDAOEarnWithdrawal
       file: ./src/map/daoEarnMapping.ts
-  
