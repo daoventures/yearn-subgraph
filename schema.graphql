@@ -179,3 +179,20 @@ type Transaction @entity {
   withdrawals: [Withdrawal!]! @derivedFrom(field: "transaction")
   transfers: [Transfer!]! @derivedFrom(field: "transaction")
 }
+
+type Cumulative @entity {
+  "ID = Bot Address"
+  id: ID!
+  lastUpdate: BigInt!
+  totalAmountRaw: BigInt!
+}
+
+type BuyBack @entity {
+  id: ID!
+  from: String!
+  to: String!
+  transactionHash: Bytes!
+  amountRaw: BigInt!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}

@@ -502,3 +502,32 @@ dataSources:
           handler: handleCubanWithdraw
       file: ./src/mapping.ts
   
+  # DVD Distribution Bot
+  - kind: ethereum/contract
+    name: DVDDistBot
+    network: {{network}}
+    source:
+      address: '{{dvdDistBotAddress}}'
+      abi: DVDDistributionBot
+      startBlock: {{dvdDistBotStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: DVDDistributionBot
+          file: ./abis/DistBot.json
+      eventHandlers:
+        - event: DistDVD(indexed address,uint256)
+          handler: handleDvdDistributionBuyBack
+      file: ./src/map/dvdBotMapping.ts
+  

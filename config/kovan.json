@@ -40,5 +40,8 @@
     "faangStartBlock": 25867824,
 
     "cubanAddress": "0x5c304A6cB105E1BFf9805cA5CF072F1d2C3bEAC5",
-    "cubanStartBlock": 25536976
+    "cubanStartBlock": 25536976,
+
+    "dvdDistBotAddress":"0xCD3e01fDCF37d76F95F265001969695d00505d9f",
+    "dvdDistBotStartBlock": 26902654
 }
