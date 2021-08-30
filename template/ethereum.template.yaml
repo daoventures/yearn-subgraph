@@ -515,19 +515,36 @@ dataSources:
       apiVersion: 0.0.4
       language: wasm/assemblyscript
       entities:
-        - Account
-        - AccountVaultBalance
-        - Token
-        - Transfer
-        - Deposit
-        - Withdrawal
-        - Transaction
-        - FarmerToken
+        - BuyBack
+        - Cumulative
       abis:
         - name: DVDDistributionBot
           file: ./abis/DistBot.json
       eventHandlers:
         - event: DistDVD(indexed address,uint256)
           handler: handleDvdDistributionBuyBack
+      file: ./src/map/dvdBotMapping.ts
+
+  # DVD Uni Bot
+  - kind: ethereum/contract
+    name: DVDUniBot
+    network: {{network}}
+    source:
+      address: '{{dvdUniBotAddress}}'
+      abi: DVDUniBot
+      startBlock: {{dvdUniBotStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - BuyBack
+        - Cumulative
+      abis:
+        - name: DVDUniBot
+          file: ./abis/UniBot.json
+      eventHandlers:
+        - event: BuyDVD(indexed address,indexed address,uint256)
+          handler: handleDvdUniBotBuyBack
       file: ./src/map/dvdBotMapping.ts
   

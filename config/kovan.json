@@ -43,5 +43,8 @@
     "cubanStartBlock": 25536976,
 
     "dvdDistBotAddress":"0xCD3e01fDCF37d76F95F265001969695d00505d9f",
-    "dvdDistBotStartBlock": 26902654
+    "dvdDistBotStartBlock": 26902654,
+
+    "dvdUniBotAddress": "0x26950Eee5209A41bB0AE0aE8335cC5a2752624ef",
+    "dvdUniBotStartBlock": 26999775
 }
