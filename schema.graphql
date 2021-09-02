@@ -185,6 +185,7 @@ type Cumulative @entity {
   id: ID!
   lastUpdate: BigInt!
   totalAmountRaw: BigInt!
+  totalAmount: BigDecimal!
 }
 
 type BuyBack @entity {
@@ -193,6 +194,7 @@ type BuyBack @entity {
   to: String!
   transactionHash: Bytes!
   amountRaw: BigInt!
+  amount: BigDecimal!
   blockNumber: BigInt!
   timestamp: BigInt!
 }
