@@ -464,4 +464,87 @@ dataSources:
         - event: Withdraw(indexed address,indexed address,uint256,uint256)
           handler: handleFaangWithdrawal
       file: ./src/mapping.ts
+
+  # DAO Vault Cuban
+  - kind: ethereum/contract
+    name: DAOVaultCuban
+    network: {{network}}
+    source:
+      address: '{{cubanAddress}}'
+      abi: CubanApe
+      startBlock: {{cubanStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: CubanApe
+          file: ./abis/CubanApeVault.json
+        - name: CubanApeStrategy
+          file: ./abis/CubanApeStrategy.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleCubanShareTransfer
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleCubanDeposit
+        - event: Withdraw(indexed address,indexed address,uint256,uint256)
+          handler: handleCubanWithdraw
+      file: ./src/mapping.ts
+  
+  # DVD Distribution Bot
+  - kind: ethereum/contract
+    name: DVDDistBot
+    network: {{network}}
+    source:
+      address: '{{dvdDistBotAddress}}'
+      abi: DVDDistributionBot
+      startBlock: {{dvdDistBotStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - BuyBack
+        - Cumulative
+      abis:
+        - name: DVDDistributionBot
+          file: ./abis/DistBot.json
+      eventHandlers:
+        - event: DistDVD(indexed address,uint256)
+          handler: handleDvdDistributionBuyBack
+      file: ./src/map/dvdBotMapping.ts
+
+  # DVD Uni Bot
+  - kind: ethereum/contract
+    name: DVDUniBot
+    network: {{network}}
+    source:
+      address: '{{dvdUniBotAddress}}'
+      abi: DVDUniBot
+      startBlock: {{dvdUniBotStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - BuyBack
+        - Cumulative
+      abis:
+        - name: DVDUniBot
+          file: ./abis/UniBot.json
+      eventHandlers:
+        - event: BuyDVD(indexed address,indexed address,uint256)
+          handler: handleDvdUniBotBuyBack
+      file: ./src/map/dvdBotMapping.ts
   

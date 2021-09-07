@@ -37,5 +37,14 @@
     "elonStartBlock": 25413059,
     
     "faangAddress": "0xd6af81e5288be43137debf969d7f2c03482c8cc1",
-    "faangStartBlock": 25867824
+    "faangStartBlock": 25867824,
+
+    "cubanAddress": "0x5c304A6cB105E1BFf9805cA5CF072F1d2C3bEAC5",
+    "cubanStartBlock": 25536976,
+
+    "dvdDistBotAddress":"0xCD3e01fDCF37d76F95F265001969695d00505d9f",
+    "dvdDistBotStartBlock": 26902654,
+
+    "dvdUniBotAddress": "0x26950Eee5209A41bB0AE0aE8335cC5a2752624ef",
+    "dvdUniBotStartBlock": 26999775
 }

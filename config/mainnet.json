@@ -36,9 +36,15 @@
     "elonAddress": "0x2D9a136cF87D599628BCBDfB6C4fe75Acd2A0aA8",
     "elonStartBlock": 12722655,
     
-    "faangAddress": "0x9ee54014e1E6CF10fD7E9290FdB6101fd0d5D416",
-    "faangStartBlock": 12932754,
+    "faangAddress": "0x742a85daF742cA0213B06fdAE449434E0448691E",
+    "faangStartBlock": 12766399,
 
     "cubanAddress": "0x2AD9F8d4c24652Ea9F8A954F7E1FdB50a3bE1DFD",
-    "cubanStartBlock": 12799447
+    "cubanStartBlock": 12799447,
+
+    "dvdDistBotAddress":"0x118875dc986485FE53ED5B2cD6750A9150566C8f",
+    "dvdDistBotStartBlock": 13086520,
+
+    "dvdUniBotAddress": "0x161793275aEB70030239A2e176669B73AC8Fc41f",
+    "dvdUniBotStartBlock": 12838474
 }
