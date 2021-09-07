@@ -1,10 +1,10 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
-import { Deposit, Metaverse } from "../../generated/DAOVaultMetaverse/Metaverse";
+import { Deposit, Metaverse, Withdraw } from "../../generated/DAOVaultMetaverse/Metaverse";
 import { Farmer } from "../../generated/schema";
 import { BIGINT_ZERO } from "../utils/constants";
 import { toDecimal } from "../utils/decimals";
 import { getOrCreateAccount, getOrCreateAccountVaultBalance, getOrCreateMetaverseFarmer, getOrCreateToken } from "../utils/helpers";
-import { getOrCreateTransaction, getOrCreateVaultDeposit } from "../utils/helpers/yearn-farmer/vault";
+import { getOrCreateTransaction, getOrCreateVaultDeposit, getOrCreateVaultWithdrawal } from "../utils/helpers/yearn-farmer/vault";
 
 function handleMetaverseDepositTemplate(
     event: Deposit,
@@ -24,6 +24,27 @@ function handleMetaverseDepositTemplate(
     deposit.transaction = event.transaction.hash.toHexString();
 
     deposit.save();
+}
+
+function handleMetaverseWithdrawTemplate(
+    event: Withdraw,
+    amount: BigInt,
+    amountInUSD: BigDecimal,
+    accountId: string,
+    vault: Farmer,
+    transactionId: string
+): void {
+    let withdraw = getOrCreateVaultWithdrawal(transactionId);
+    
+    withdraw.farmer = vault.id;
+    withdraw.account = accountId;
+    withdraw.amount = amount;
+    withdraw.amountInUSD = amountInUSD;
+    withdraw.shares = event.params.sharesBurn;
+    withdraw.totalSupply = vault.totalSupplyRaw;
+    withdraw.transaction = transactionId;
+
+    withdraw.save();
 }
 
 export function handleMetaverseDeposit(event: Deposit): void {
@@ -129,4 +150,110 @@ export function handleMetaverseDeposit(event: Deposit): void {
 
     farmer.save();
     toAccount.save();
+}
+
+export function handleMetaverseWithdraw(event: Withdraw): void {
+    let farmer = getOrCreateMetaverseFarmer(event.address);
+    // farmer.underlyingToken
+
+    let fromAccount = getOrCreateAccount(event.params.caller.toHexString());
+    let toAccount = getOrCreateAccount(event.address.toHexString());
+    // underlyingToken object
+    let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
+
+    let amount: BigInt;
+    if(farmer.totalSupplyRaw != BIGINT_ZERO) {
+        amount = event.params.sharesBurn
+            .times(farmer.poolRaw)
+            .div(farmer.totalSupplyRaw);
+    } else {
+        amount = event.params.sharesBurn;
+    }
+
+    let amountInUSDRaw: BigInt = event.params.withdrawAmt;
+    let amountInUSD = toDecimal(amountInUSDRaw, 18);
+
+    let transaction = getOrCreateTransaction(
+        event.transaction.hash.toHexString()
+    );
+    transaction.blockNumber = event.block.number;
+    transaction.timestamp = event.block.timestamp;
+    transaction.transactionHash = event.transaction.hash;
+    transaction.save();
+
+    farmer.transaction = transaction.id;
+
+    // Vault withdraw
+    handleMetaverseWithdrawTemplate(
+        event, 
+        amount,
+        amountInUSD,
+        fromAccount.id,
+        farmer,
+        transaction.id
+    );
+
+    let fromAccountBalance = getOrCreateAccountVaultBalance(
+        fromAccount.id.concat("-").concat(farmer.id)
+    );
+    fromAccountBalance.account = fromAccount.id;
+    fromAccountBalance.farmer = farmer.id;
+    fromAccountBalance.shareToken = farmer.id;
+    fromAccountBalance.underlyingToken = farmer.shareToken;
+
+    fromAccountBalance.totalWithdrawnRaw = fromAccountBalance.totalWithdrawnRaw.plus(amountInUSDRaw);
+    fromAccountBalance.totalWithdrawn = toDecimal(
+        fromAccountBalance.totalWithdrawnRaw,
+        shareToken.decimals
+    );
+    
+    fromAccountBalance.totalSharesBurnedRaw = fromAccountBalance.totalSharesBurnedRaw.plus(event.params.sharesBurn);
+    fromAccountBalance.totalSharesBurned = toDecimal(
+        fromAccountBalance.totalSharesBurnedRaw,
+        shareToken.decimals
+    );
+
+    fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(
+        amountInUSDRaw
+    );
+    fromAccountBalance.netDeposits = toDecimal(
+        fromAccountBalance.netDepositsRaw,
+        shareToken.decimals
+    );
+
+    fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(event.params.sharesBurn);
+    fromAccountBalance.shareBalance = toDecimal(
+        fromAccountBalance.shareBalanceRaw,
+        shareToken.decimals
+    );
+
+    fromAccountBalance.save();
+
+    farmer.totalWithdrawnRaw = farmer.totalWithdrawnRaw.plus(amountInUSDRaw);
+    farmer.totalWithdrawn = toDecimal(
+        farmer.totalWithdrawnRaw,
+        shareToken.decimals
+    );
+
+    farmer.totalSharesBurnedRaw = farmer.totalSharesBurnedRaw.plus(
+        event.params.sharesBurn
+    );
+    farmer.totalSharesBurned = toDecimal(
+        farmer.totalSharesBurnedRaw,
+        shareToken.decimals
+    );
+
+    farmer.netDepositsRaw = farmer.totalDepositedRaw.minus(farmer.totalWithdrawnRaw);
+    farmer.netDeposits = toDecimal(
+        farmer.netDepositsRaw,
+        shareToken.decimals
+    );
+
+    farmer.totalActiveSharesRaw = farmer.totalActiveSharesRaw.minus(farmer.totalSharesBurnedRaw);
+    farmer.totalActiveShares = toDecimal(
+        farmer.totalActiveSharesRaw,
+        shareToken.decimals
+    );
+
+    farmer.save();
 }
