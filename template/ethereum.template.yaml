@@ -531,9 +531,11 @@ dataSources:
         - name: MetaverseStrategy
           file: ./abis/MetaverseStrategy.json
       eventHandlers:
-        - event: Deposit(indexed address,uint256)
+        - event: Deposit(address,uint256)
           handler: handleMetaverseDeposit
-        - event: Withdraw(indexed address,uint256,uint256)
+        - event: DistributeLPToken(address,uint256)
+          handler: handleMetaverseShareMinted
+        - event: Withdraw(address,uint256,address,uint256)
           handler: handleMetaverseWithdraw
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleMetaverseShareTransfer

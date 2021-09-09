@@ -1,5 +1,5 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
-import { Deposit, Metaverse, Transfer, Withdraw } from "../../generated/DAOVaultMetaverse/Metaverse";
+import { Deposit, DistributeLPToken, Metaverse, Transfer, Withdraw } from "../../generated/DAOVaultMetaverse/Metaverse";
 import { Farmer } from "../../generated/schema";
 import { BIGDECIMAL_ZERO, BIGINT_ZERO, ZERO_ADDRESS } from "../utils/constants";
 import { toDecimal } from "../utils/decimals";
@@ -18,7 +18,7 @@ function handleMetaverseDepositTemplate(
     deposit.farmer = vault.id;
     deposit.account = accountId;
     deposit.amount = BIGINT_ZERO; // need admin to trigger invest() in order to mint shares, so at deposit moment we cannot get user's shares.
-    deposit.shares =  BIGINT_ZERO;
+    deposit.shares =  BIGINT_ZERO; // need admin to trigger invest() in order to mint shares, so at deposit moment we cannot get user's shares.
     deposit.amountInUSD = amountInUSD;
     deposit.totalSupply = vault.totalSupplyRaw;
     deposit.transaction = event.transaction.hash.toHexString();
@@ -80,7 +80,7 @@ export function handleMetaverseDeposit(event: Deposit): void {
 
     // Deposited amount from USDC, USDT or DAI in 18 decimals
     let amountInUSDRaw: BigInt = event.params.depositAmt;
-    let amountInUSD: BigDecimal = toDecimal(event.params.depositAmt, 18);
+    let amountInUSD: BigDecimal = toDecimal(amountInUSDRaw, 18);
 
     let transaction = getOrCreateTransaction(
         event.transaction.hash.toHexString()
@@ -103,100 +103,116 @@ export function handleMetaverseDeposit(event: Deposit): void {
         event.transaction.hash.toHexString()
     );
 
-    // To Account Balance
-    // let toAccountBalance = getOrCreateAccountVaultBalance(
-    //     toAccount.id.concat("-").concat(farmer.id)
-    // )
-    // toAccountBalance.account = toAccount.id;
-    // toAccountBalance.farmer = farmer.id;
-    // toAccountBalance.shareToken = farmer.id;
-    // toAccountBalance.underlyingToken = shareToken.id;
-    
-    // toAccountBalance.totalDepositedRaw = toAccountBalance.totalDepositedRaw.plus(amountInUSDRaw);
-    // toAccountBalance.totalDeposited = toDecimal(
-    //     toAccountBalance.totalDepositedRaw,
-    //     18
-    // );
-    // // Set as BIG_INT zero as shares minted after invest() is called.
-    // toAccountBalance.totalSharesMintedRaw = toAccountBalance.totalSharesMintedRaw.plus(BIGINT_ZERO);
-    // toAccountBalance.totalSharesMinted = toDecimal(
-    //     toAccountBalance.totalSharesMintedRaw,
-    //     shareToken.decimals
-    // );
+    farmer.save();
+}
 
-    // toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(amountInUSDRaw);
-    // toAccountBalance.netDeposits = toDecimal(
-    //     toAccountBalance.netDepositsRaw,
-    //     18
-    // );
+export function handleMetaverseShareMinted(event: DistributeLPToken): void {
+    let farmer = getOrCreateMetaverseFarmer(event.address);
+    let toAccount = getOrCreateAccount(event.params.receiver.toHexString());
+    let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
 
-    // toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(BIGINT_ZERO);
-    // toAccountBalance.shareBalance = toDecimal(
-    //     toAccountBalance.shareBalanceRaw,
-    //     shareToken.decimals
-    // );
+    let metaverseContract = Metaverse.bind(event.address);
 
-    // toAccountBalance.save();
+    let shares: BigInt = event.params.shareMint;
+    let sharesAmount: BigInt;
+    if (farmer.totalSupplyRaw !== BIGINT_ZERO) {
+        let ppfs = metaverseContract.try_getPricePerFullShare();
+        let pricePerFullShare = !ppfs.reverted
+            ? ppfs.value
+            : BIGINT_ZERO;
 
-    // Use amount in USD to sum up, since we don't have shares minted to get back default amount
-    // before fee subtraction.
-    farmer.totalDepositedRaw = farmer.totalDepositedRaw.plus(amountInUSDRaw);
+        sharesAmount = shares.times(pricePerFullShare);
+    } else {
+        sharesAmount = shares;
+    }
+
+    let toAccountBalance = getOrCreateAccountVaultBalance(
+        toAccount.id.concat("-").concat(farmer.id)
+    );
+
+    toAccountBalance.account = toAccount.id;
+    toAccountBalance.farmer = farmer.id;
+    toAccountBalance.shareToken = farmer.id;
+    toAccountBalance.underlyingToken = farmer.id;
+
+    toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(sharesAmount);
+    toAccountBalance.netDeposits = toDecimal(
+        toAccountBalance.netDepositsRaw,
+        shareToken.decimals
+    );
+
+    toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(shares);
+    toAccountBalance.shareBalance = toDecimal(
+        toAccountBalance.shareBalanceRaw,
+        shareToken.decimals
+    );
+
+    // Shares Minted
+    toAccountBalance.totalDepositedRaw = toAccountBalance.totalDepositedRaw.plus(sharesAmount);
+    toAccountBalance.totalDeposited = toDecimal(
+        toAccountBalance.totalDepositedRaw,
+        shareToken.decimals
+    );
+
+    toAccountBalance.totalSharesMintedRaw = toAccountBalance.totalSharesMintedRaw.plus(shares);
+    toAccountBalance.totalSharesMinted = toDecimal(
+        toAccountBalance.totalSharesMintedRaw,
+        shareToken.decimals
+    );
+
+    toAccountBalance.save();
+
+    // Update Farmer
+    farmer.totalDepositedRaw = farmer.totalDepositedRaw.plus(sharesAmount);
     farmer.totalDeposited = toDecimal(
         farmer.totalDepositedRaw,
-        18
-    )
+        shareToken.decimals
+    );
 
-    // Use latest balance of to represent total shares minted, shares after deposit will not be minted until
-    // admin is calling invest(), example user A deposit for first time, she will not get her shares
-    // minted until admin trigger invest()
-    let totalSharesMinted = metaverseContract.try_balanceOf(event.params.caller);
-    farmer.totalSharesMintedRaw = !totalSharesMinted.reverted 
-        ? totalSharesMinted.value
-        : farmer.totalSharesMintedRaw;
+    farmer.totalSharesMintedRaw = farmer.totalSharesMintedRaw.plus(shares);
     farmer.totalSharesMinted = toDecimal(
         farmer.totalSharesMintedRaw,
         shareToken.decimals
     );
 
-    farmer.netDepositsRaw = farmer.totalDepositedRaw.minus(
-        farmer.totalWithdrawnRaw
-    );
+    farmer.netDepositsRaw = farmer.totalDepositedRaw.minus(farmer.totalWithdrawnRaw);
     farmer.netDeposits = toDecimal(
         farmer.netDepositsRaw,
         shareToken.decimals
-    )
+    );
 
-    farmer.totalActiveSharesRaw = farmer.totalSharesMintedRaw.minus(
-        farmer.totalSharesBurnedRaw
-    )
+    farmer.totalActiveSharesRaw = farmer.totalSharesMintedRaw.minus(farmer.totalSharesBurnedRaw);
     farmer.totalActiveShares = toDecimal(
         farmer.totalActiveSharesRaw,
         shareToken.decimals
-    )
+    );
 
     farmer.save();
-    toAccount.save();
 }
 
 export function handleMetaverseWithdraw(event: Withdraw): void {
     let farmer = getOrCreateMetaverseFarmer(event.address);
+    farmer.underlyingToken = getOrCreateToken(event.params.tokenWithdraw).id;
    
     let fromAccount = getOrCreateAccount(event.params.caller.toHexString());
-    let toAccount = getOrCreateAccount(event.address.toHexString());
-    // underlyingToken object
+    let underlyingToken = getOrCreateToken(Address.fromString(farmer.underlyingToken));
     let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
+    let metaverseContract = Metaverse.bind(event.address);
 
     let amount: BigInt;
+    let sharesBurn = event.params.sharesBurn;
     if(farmer.totalSupplyRaw != BIGINT_ZERO) {
-        amount = event.params.sharesBurn
-            .times(farmer.poolRaw)
-            .div(farmer.totalSupplyRaw);
+        let ppfs = metaverseContract.try_getPricePerFullShare();
+        let pricePerFullShare = !ppfs.reverted
+            ? ppfs.value
+            : BIGINT_ZERO
+        amount = sharesBurn.times(pricePerFullShare);
     } else {
-        amount = event.params.sharesBurn;
+        amount = sharesBurn;
     }
 
     let amountInUSDRaw: BigInt = event.params.withdrawAmt;
-    let amountInUSD = toDecimal(amountInUSDRaw, 18);
+    let amountInUSD = toDecimal(amountInUSDRaw, underlyingToken.decimals);
 
     let transaction = getOrCreateTransaction(
         event.transaction.hash.toHexString()
@@ -224,7 +240,7 @@ export function handleMetaverseWithdraw(event: Withdraw): void {
     fromAccountBalance.account = fromAccount.id;
     fromAccountBalance.farmer = farmer.id;
     fromAccountBalance.shareToken = farmer.id;
-    fromAccountBalance.underlyingToken = farmer.shareToken;
+    fromAccountBalance.underlyingToken = farmer.underlyingToken;
 
     fromAccountBalance.totalWithdrawnRaw = fromAccountBalance.totalWithdrawnRaw.plus(amount);
     fromAccountBalance.totalWithdrawn = toDecimal(
@@ -232,21 +248,19 @@ export function handleMetaverseWithdraw(event: Withdraw): void {
         shareToken.decimals
     );
     
-    fromAccountBalance.totalSharesBurnedRaw = fromAccountBalance.totalSharesBurnedRaw.plus(event.params.sharesBurn);
+    fromAccountBalance.totalSharesBurnedRaw = fromAccountBalance.totalSharesBurnedRaw.plus(sharesBurn);
     fromAccountBalance.totalSharesBurned = toDecimal(
         fromAccountBalance.totalSharesBurnedRaw,
         shareToken.decimals
     );
 
-    fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(
-        amount
-    );
+    fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(amount);
     fromAccountBalance.netDeposits = toDecimal(
         fromAccountBalance.netDepositsRaw,
         shareToken.decimals
     );
 
-    fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(event.params.sharesBurn);
+    fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(sharesBurn);
     fromAccountBalance.shareBalance = toDecimal(
         fromAccountBalance.shareBalanceRaw,
         shareToken.decimals
@@ -260,9 +274,7 @@ export function handleMetaverseWithdraw(event: Withdraw): void {
         shareToken.decimals
     );
 
-    farmer.totalSharesBurnedRaw = farmer.totalSharesBurnedRaw.plus(
-        event.params.sharesBurn
-    );
+    farmer.totalSharesBurnedRaw = farmer.totalSharesBurnedRaw.plus(sharesBurn);
     farmer.totalSharesBurned = toDecimal(
         farmer.totalSharesBurnedRaw,
         shareToken.decimals
@@ -285,15 +297,19 @@ export function handleMetaverseWithdraw(event: Withdraw): void {
 
 export function handleMetaverseShareTransfer(event: Transfer): void {
     let farmer = getOrCreateMetaverseFarmer(event.address);
+    farmer.underlyingToken = getOrCreateToken(event.address).id;
     let fromAccount = getOrCreateAccount(event.params.from.toHexString()); // sender
     let toAccount = getOrCreateAccount(event.params.to.toHexString()); // recipient
     let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
 
     let amount: BigInt;
+    let metaverseContract = Metaverse.bind(event.address);
     if(farmer.totalSupplyRaw != BIGINT_ZERO) {
-        amount = event.params.value 
-            .times(farmer.poolRaw)
-            .div(farmer.totalSupplyRaw);
+        let ppfs = metaverseContract.try_getPricePerFullShare();
+        let pricePerFullShare = !ppfs.reverted
+            ? ppfs.value
+            : BIGINT_ZERO;
+        amount = event.params.value.times(pricePerFullShare);
     } else {
         amount = event.params.value;
     }
@@ -315,8 +331,10 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
         fromAccount.id.concat("-").concat(farmer.id)
     )
 
-    // If to Address is ZERO_ADDRESS, the shares is to burn
-    if(event.params.to.toHexString() !== ZERO_ADDRESS) {
+    if(
+        event.params.to.toHexString() !== ZERO_ADDRESS &&
+        event.params.from.toHexString() !== ZERO_ADDRESS
+    ) {
         handleMetaverseTransferTemplate(
             event, 
             amount,
@@ -330,8 +348,8 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
         toAccountBalance.account = toAccount.id;
         toAccountBalance.farmer = farmer.id;
         toAccountBalance.shareToken = farmer.id;
-        toAccountBalance.underlyingToken = farmer.id; // TAKE NOTE
-        
+        toAccountBalance.underlyingToken = farmer.underlyingToken;
+
         toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(amount);
         toAccountBalance.netDeposits = toDecimal(
             toAccountBalance.netDepositsRaw, 
@@ -343,95 +361,50 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
             toAccountBalance.shareBalanceRaw,
             shareToken.decimals
         );
+        
+        toAccountBalance.totalReceivedRaw = toAccountBalance.totalReceivedRaw.plus(amount);
+        toAccountBalance.netDeposits = toDecimal(
+            toAccountBalance.netDepositsRaw,
+            shareToken.decimals
+        );
 
-        if(event.params.from.toHexString() !== ZERO_ADDRESS) {
-            // Shares Transfer
-            toAccountBalance.totalReceivedRaw = toAccountBalance.totalReceivedRaw.plus(amount);
-            toAccountBalance.netDeposits = toDecimal(
-                toAccountBalance.netDepositsRaw,
-                shareToken.decimals
-            );
+        toAccountBalance.totalSharesReceivedRaw = toAccountBalance.totalSharesReceivedRaw.plus(event.params.value);
+        toAccountBalance.totalSharesReceived = toDecimal(
+            toAccountBalance.totalSharesReceivedRaw,
+            shareToken.decimals
+        ); 
 
-            toAccountBalance.totalSharesReceivedRaw = toAccountBalance.totalSharesReceivedRaw.plus(event.params.value);
-            toAccountBalance.totalSharesReceived = toDecimal(
-                toAccountBalance.totalSharesReceivedRaw,
-                shareToken.decimals
-            );    
-        } else {
-            // Shares Minted
-            toAccountBalance.totalDepositedRaw = toAccountBalance.totalDepositedRaw.plus(amount);
-            toAccountBalance.totalDeposited = toDecimal(
-                toAccountBalance.totalDepositedRaw,
-                shareToken.decimals
-            );
+        // Update sender account total and balances
+        fromAccountBalance.account = fromAccount.id;
+        fromAccountBalance.farmer = farmer.id;
+        fromAccountBalance.shareToken = farmer.id;
+        fromAccountBalance.underlyingToken = farmer.underlyingToken;
 
-            toAccountBalance.totalSharesMintedRaw = toAccountBalance.totalSharesMintedRaw.plus(event.params.value);
-            toAccountBalance.totalSharesMinted = toDecimal(
-                toAccountBalance.totalSharesMintedRaw,
-                shareToken.decimals
-            );
+        fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(amount);
+        fromAccountBalance.netDeposits = toDecimal( 
+            fromAccountBalance.netDepositsRaw,
+            shareToken.decimals
+        );
 
-            // Update Farmer
-            farmer.totalDepositedRaw = farmer.totalDepositedRaw.plus(amount);
-            farmer.totalDeposited = toDecimal (
-                farmer.totalDepositedRaw,
-                shareToken.decimals
-            );
+        fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(event.params.value);
+        fromAccountBalance.shareBalance = toDecimal(
+            fromAccountBalance.shareBalanceRaw,
+            shareToken.decimals
+        );
 
-            farmer.totalSharesMintedRaw = farmer.totalSharesMintedRaw.plus(event.params.value);
-            farmer.totalSharesMinted = toDecimal (
-                farmer.totalSharesMintedRaw,
-                shareToken.decimals
-            );
+        fromAccountBalance.totalSentRaw = fromAccountBalance.totalSentRaw.plus(amount);
+        fromAccountBalance.totalSent = toDecimal(
+            fromAccountBalance.totalSentRaw,
+            shareToken.decimals
+        );
 
-            farmer.netDepositsRaw = farmer.totalDepositedRaw.minus(farmer.totalWithdrawnRaw);
-            farmer.netDeposits = toDecimal(
-                farmer.netDepositsRaw,
-                shareToken.decimals
-            );
-
-            farmer.totalActiveSharesRaw = farmer.totalActiveSharesRaw.minus(farmer.totalSharesBurnedRaw);
-            farmer.totalActiveShares = toDecimal(
-                farmer.totalActiveSharesRaw,
-                shareToken.decimals
-            );
-
-            farmer.save();
-        }
-       
-        // Shares Transfer, update share balance in sender account
-        if(event.params.from.toHexString() !== ZERO_ADDRESS) {
-            fromAccountBalance.account = fromAccount.id;
-            fromAccountBalance.farmer = farmer.id;
-            fromAccountBalance.shareToken = farmer.id;
-            fromAccountBalance.underlyingToken = farmer.id;
-
-            fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(amount);
-            fromAccountBalance.netDeposits = toDecimal( 
-                fromAccountBalance.netDepositsRaw,
-                shareToken.decimals
-            );
-
-            fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(event.params.value);
-            fromAccountBalance.shareBalance = toDecimal(
-                fromAccountBalance.shareBalanceRaw,
-                shareToken.decimals
-            );
-
-            fromAccountBalance.totalSentRaw = fromAccountBalance.totalSentRaw.plus(amount);
-            fromAccountBalance.totalSent = toDecimal(
-                fromAccountBalance.totalSentRaw,
-                shareToken.decimals
-            );
-
-            fromAccountBalance.totalSharesSentRaw = fromAccountBalance.totalSharesSentRaw.plus(event.params.value);
-            fromAccountBalance.totalSharesSent = toDecimal(
-                fromAccountBalance.totalSharesSentRaw,
-                shareToken.decimals
-            );
-        } 
-
-        toAccountBalance.save();
-        fromAccountBalance.save();
+        fromAccountBalance.totalSharesSentRaw = fromAccountBalance.totalSharesSentRaw.plus(event.params.value);
+        fromAccountBalance.totalSharesSent = toDecimal(
+            fromAccountBalance.totalSharesSentRaw,
+            shareToken.decimals
+        );    
     }
+
+    toAccountBalance.save();
+    fromAccountBalance.save();
 }
