@@ -76,8 +76,7 @@ export function handleMetaverseDeposit(event: Deposit): void {
     let farmer = getOrCreateMetaverseFarmer(event.address);
     let toAccount = getOrCreateAccount(event.params.caller.toHexString());
     let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
-    let metaverseContract = Metaverse.bind(event.address);
-
+    
     // Deposited amount from USDC, USDT or DAI in 18 decimals
     let amountInUSDRaw: BigInt = event.params.depositAmt;
     let amountInUSD: BigDecimal = toDecimal(amountInUSDRaw, 18);
