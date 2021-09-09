@@ -685,7 +685,7 @@ export function getOrCreateMetaverseFarmer(
         // let shareToken = getOrCreateToken(vaultAddress);
 
         let totalSupply = vaultContract.try_totalSupply();
-        let pool = vaultContract.try_getAllPool(true);
+        let pool = vaultContract.try_getAllPoolInUSD(); // Check from code, the result returned in  18 decimals
 
         vault.poolRaw = !pool.reverted 
           ? pool.value
@@ -702,9 +702,6 @@ export function getOrCreateMetaverseFarmer(
     }
   }
   return vault as Farmer;
-
-
-  return null;
 }
 
 export function getOrCreateTransaction(
