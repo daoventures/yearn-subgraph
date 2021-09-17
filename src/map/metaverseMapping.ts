@@ -52,6 +52,8 @@ function handleMetaverseWithdrawTemplate(
 function handleMetaverseTransferTemplate(
     event: Transfer,
     amount: BigInt,
+    amountInUSD: BigDecimal,
+    pricePerFullShare: BigDecimal,
     fromId: string,
     toId: string,
     vault: Farmer,
@@ -66,10 +68,8 @@ function handleMetaverseTransferTemplate(
     transfer.amount = amount;
     transfer.totalSupply = vault.totalSupplyRaw;
     transfer.transaction = event.transaction.hash.toHexString();
-
-    // TODO: Find transfer share in USD
-    // transfer.amountInUSD = BIGINT_ZERO;
-    transfer.amountInUSD = BIGDECIMAL_ZERO;
+    transfer.amountInUSD = amountInUSD;
+    transfer.pricePerFullShare = pricePerFullShare;
     
     transfer.save();
 }
@@ -349,17 +349,31 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
     let toAccount = getOrCreateAccount(event.params.to.toHexString()); // recipient
     let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
 
-    let amount: BigInt;
     let metaverseContract = Metaverse.bind(event.address);
-    if(farmer.totalSupplyRaw != BIGINT_ZERO) {
-        let ppfs = metaverseContract.try_getPricePerFullShare();
-        let pricePerFullShareRaw = !ppfs.reverted
-            ? ppfs.value
-            : BIGINT_ZERO;
-        amount = event.params.value.times(pricePerFullShareRaw);
-    } else {
-        amount = event.params.value;
-    }
+
+    // Price per full share
+    let ppfs = metaverseContract.try_getPricePerFullShare();
+    let ppfsRaw = !ppfs.reverted
+        ? ppfs.value
+        : BIGINT_ZERO;
+    let pricePerFullShareUSD: BigDecimal = toDecimal(
+        ppfsRaw,
+        18
+    );
+
+    // Shares
+    let sharesRaw: BigInt = event.params.value;
+    let shares:BigDecimal = toDecimal(
+        sharesRaw,
+        shareToken.decimals
+    );
+
+    // Calculate shares amount based on price per full share
+    let sharesAmount = (farmer.totalSupplyRaw !== BIGINT_ZERO)
+        ? shares.times(pricePerFullShareUSD)
+        : shares;
+    let sharesAmountRaw = toBigInt(sharesAmount, 18); 
+
 
     let transaction = getOrCreateTransaction(
         event.transaction.hash.toHexString()
@@ -385,7 +399,9 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
     ) {
         handleMetaverseTransferTemplate(
             event, 
-            amount,
+            sharesAmountRaw,
+            sharesAmount,
+            pricePerFullShareUSD,
             fromAccount.id,
             toAccount.id,
             farmer,
@@ -398,26 +414,26 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
         toAccountBalance.shareToken = farmer.id;
         toAccountBalance.underlyingToken = farmer.underlyingToken;
 
-        toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(amount);
+        toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(sharesAmountRaw);
         toAccountBalance.netDeposits = toDecimal(
             toAccountBalance.netDepositsRaw, 
             shareToken.decimals
         );
-
-        // event.params.value
-        toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(BIGINT_ZERO);
-        toAccountBalance.shareBalance = toDecimal(
-            toAccountBalance.shareBalanceRaw,
-            shareToken.decimals
-        );
         
-        toAccountBalance.totalReceivedRaw = toAccountBalance.totalReceivedRaw.plus(amount);
+        toAccountBalance.totalReceivedRaw = toAccountBalance.totalReceivedRaw.plus(sharesAmountRaw);
         toAccountBalance.netDeposits = toDecimal(
             toAccountBalance.netDepositsRaw,
             shareToken.decimals
         );
 
-        toAccountBalance.totalSharesReceivedRaw = toAccountBalance.totalSharesReceivedRaw.plus(event.params.value);
+        // event.params.value
+        toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(sharesRaw);
+        toAccountBalance.shareBalance = toDecimal(
+            toAccountBalance.shareBalanceRaw,
+            shareToken.decimals
+        );
+
+        toAccountBalance.totalSharesReceivedRaw = toAccountBalance.totalSharesReceivedRaw.plus(sharesRaw);
         toAccountBalance.totalSharesReceived = toDecimal(
             toAccountBalance.totalSharesReceivedRaw,
             shareToken.decimals
@@ -429,26 +445,26 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
         fromAccountBalance.shareToken = farmer.id;
         fromAccountBalance.underlyingToken = farmer.underlyingToken;
 
-        fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(amount);
+        fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(sharesAmountRaw);
         fromAccountBalance.netDeposits = toDecimal( 
             fromAccountBalance.netDepositsRaw,
             shareToken.decimals
         );
 
-        // event params value 
-        fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(BIGINT_ZERO);
-        fromAccountBalance.shareBalance = toDecimal(
-            fromAccountBalance.shareBalanceRaw,
-            shareToken.decimals
-        );
-
-        fromAccountBalance.totalSentRaw = fromAccountBalance.totalSentRaw.plus(amount);
+        fromAccountBalance.totalSentRaw = fromAccountBalance.totalSentRaw.plus(sharesAmountRaw);
         fromAccountBalance.totalSent = toDecimal(
             fromAccountBalance.totalSentRaw,
             shareToken.decimals
         );
 
-        fromAccountBalance.totalSharesSentRaw = fromAccountBalance.totalSharesSentRaw.plus(event.params.value);
+      
+        fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(sharesRaw);
+        fromAccountBalance.shareBalance = toDecimal(
+             fromAccountBalance.shareBalanceRaw,
+             shareToken.decimals
+         );
+ 
+        fromAccountBalance.totalSharesSentRaw = fromAccountBalance.totalSharesSentRaw.plus(sharesRaw);
         fromAccountBalance.totalSharesSent = toDecimal(
             fromAccountBalance.totalSharesSentRaw,
             shareToken.decimals
