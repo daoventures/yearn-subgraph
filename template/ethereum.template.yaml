@@ -523,6 +523,7 @@ dataSources:
         - Withdrawal
         - Transaction
         - FarmerToken
+        - DistributeLPToken
       abis:
         - name: ERC20
           file: ./abis/ERC20.json
