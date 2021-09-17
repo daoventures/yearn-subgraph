@@ -1,6 +1,7 @@
 import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
 import {
   Deposit,
+  DistributeLPToken,
   Farmer,
   Transaction,
   Transfer,
@@ -754,4 +755,17 @@ export function getOrCreateVaultWithdrawal(
   }
 
   return action as Withdrawal;
+}
+
+export function getOrCreateVaultDistributeLPToken(
+  id: string,
+  createIfNotFound: boolean = true
+): DistributeLPToken {
+  let action = DistributeLPToken.load(id);
+
+  if (action == null && createIfNotFound) {
+    action = new DistributeLPToken(id);
+  }
+
+  return action as DistributeLPToken;
 }

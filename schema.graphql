@@ -179,3 +179,18 @@ type Transaction @entity {
   withdrawals: [Withdrawal!]! @derivedFrom(field: "transaction")
   transfers: [Transfer!]! @derivedFrom(field: "transaction")
 }
+
+type DistributeLPToken @entity {
+  "ID = Transaction Hash + To Account address",
+  id: ID!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  totalSharesMintedRaw: BigInt!
+  totalSharesMinted: BigDecimal!
+  amountRaw: BigInt!
+  amount: BigDecimal!
+  pricePerFullShareUSDRaw: BigInt!,
+  pricePerFullShareUSD: BigDecimal!,
+  account: Account!
+}
