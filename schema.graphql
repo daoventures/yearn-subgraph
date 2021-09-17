@@ -134,6 +134,7 @@ type Transfer @entity {
   farmer: Farmer!
   totalSupply: BigInt!
   transaction: Transaction!
+  pricePerFullShare: BigDecimal
 }
 
 interface Action @entity {
@@ -155,6 +156,7 @@ type Deposit implements Action @entity {
   shares: BigInt!
   totalSupply: BigInt!
   transaction: Transaction!
+  pricePerFullShare: BigDecimal
 }
 
 type Withdrawal implements Action @entity {
@@ -166,6 +168,7 @@ type Withdrawal implements Action @entity {
   shares: BigInt!
   totalSupply: BigInt!
   transaction: Transaction!
+  pricePerFullShare: BigDecimal
 }
 
 type Transaction @entity {
