@@ -163,6 +163,12 @@ export function handleMetaverseShareMinted(event: DistributeLPToken): void {
         shareToken.decimals
     );
 
+    toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(sharesRaw);
+    toAccountBalance.shareBalance = toDecimal(
+        toAccountBalance.shareBalanceRaw,
+        shareToken.decimals
+    );
+
     toAccountBalance.save();
 
     // Update Distribute Token Record
@@ -301,7 +307,7 @@ export function handleMetaverseWithdraw(event: Withdraw): void {
         shareToken.decimals
     );
 
-    fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(BIGINT_ZERO);
+    fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(sharesRaw);
     fromAccountBalance.shareBalance = toDecimal(
         fromAccountBalance.shareBalanceRaw,
         shareToken.decimals
@@ -364,6 +370,7 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
     transaction.save();
 
     farmer.transaction = transaction.id;
+    farmer.save();
 
     let toAccountBalance = getOrCreateAccountVaultBalance(
         toAccount.id.concat("-").concat(farmer.id)
@@ -373,8 +380,8 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
     )
 
     if(
-        event.params.to.toHexString() !== ZERO_ADDRESS &&
-        event.params.from.toHexString() !== ZERO_ADDRESS
+        event.params.to.toHexString() != ZERO_ADDRESS &&
+        event.params.from.toHexString() != ZERO_ADDRESS
     ) {
         handleMetaverseTransferTemplate(
             event, 
@@ -398,7 +405,7 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
         );
 
         // event.params.value
-        toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(event.params.value);
+        toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(BIGINT_ZERO);
         toAccountBalance.shareBalance = toDecimal(
             toAccountBalance.shareBalanceRaw,
             shareToken.decimals
@@ -429,7 +436,7 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
         );
 
         // event params value 
-        fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(event.params.value);
+        fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(BIGINT_ZERO);
         fromAccountBalance.shareBalance = toDecimal(
             fromAccountBalance.shareBalanceRaw,
             shareToken.decimals
@@ -446,8 +453,10 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
             fromAccountBalance.totalSharesSentRaw,
             shareToken.decimals
         );    
-    }
 
-    toAccountBalance.save();
-    fromAccountBalance.save();
+        toAccountBalance.save();
+        fromAccountBalance.save();
+    }
 }
+
+   
