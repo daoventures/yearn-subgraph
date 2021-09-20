@@ -157,6 +157,7 @@ type Deposit implements Action @entity {
   totalSupply: BigInt!
   transaction: Transaction!
   pricePerFullShare: BigDecimal
+  tokenAddress: String
 }
 
 type Withdrawal implements Action @entity {

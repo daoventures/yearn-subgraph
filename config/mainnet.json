@@ -37,5 +37,11 @@
     "elonStartBlock": 12722655,
     
     "faangAddress": "0x742a85daF742cA0213B06fdAE449434E0448691E",
-    "faangStartBlock": 12766399
+    "faangStartBlock": 12766399,
+
+    "cubanAddress": "0x2AD9F8d4c24652Ea9F8A954F7E1FdB50a3bE1DFD",
+    "cubanStartBlock": 12799447,
+
+    "metaverseAddress": "0x5b3ae8b672A753906B1592D44741f71FBD05ba8C",
+    "metaverseStartBlock": 13239874
 }

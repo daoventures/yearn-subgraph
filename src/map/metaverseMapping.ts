@@ -2,7 +2,7 @@ import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { Deposit, DistributeLPToken, Metaverse, Transfer, Withdraw } from "../../generated/DAOVaultMetaverse/Metaverse";
 import { Farmer } from "../../generated/schema";
 import { BIGINT_ZERO, ZERO_ADDRESS } from "../utils/constants";
-import { toBigInt, toDecimal } from "../utils/decimals";
+import { toDecimal, toBigInt } from "../utils/decimals";
 import { getOrCreateAccount, getOrCreateAccountVaultBalance, getOrCreateMetaverseFarmer, getOrCreateToken } from "../utils/helpers";
 import { getOrCreateTransaction, getOrCreateVaultDeposit, getOrCreateVaultDistributeLPToken, getOrCreateVaultTransfer, getOrCreateVaultWithdrawal } from "../utils/helpers/yearn-farmer/vault";
 
@@ -22,6 +22,7 @@ function handleMetaverseDepositTemplate(
     deposit.amountInUSD = amountInUSD;
     deposit.totalSupply = vault.totalSupplyRaw;
     deposit.transaction = event.transaction.hash.toHexString();
+    deposit.tokenAddress = event.params.tokenDeposit.toHexString();
 
     deposit.save();
 }
@@ -81,7 +82,8 @@ export function handleMetaverseDeposit(event: Deposit): void {
     
     // Deposited amount from USDC, USDT or DAI in 18 decimals
     let amountInUSDRaw: BigInt = event.params.depositAmt;
-    let amountInUSD: BigDecimal = toDecimal(amountInUSDRaw, 18);
+    let depositToken = getOrCreateToken(event.params.tokenDeposit);
+    let amountInUSD: BigDecimal = toDecimal(amountInUSDRaw, depositToken.decimals);
 
     let transaction = getOrCreateTransaction(
         event.transaction.hash.toHexString()
@@ -131,7 +133,6 @@ export function handleMetaverseShareMinted(event: DistributeLPToken): void {
         shareToken.decimals
     );
     
-    // Calculate shares minted based on current price per full share
     let sharesAmount = (farmer.totalSupplyRaw !== BIGINT_ZERO)
         ? shares.times(pricePerFullShareUSD)
         : shares;
@@ -475,6 +476,8 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
             shareToken.decimals
         );    
 
+        toAccount.save();
+        fromAccount.save();
         toAccountBalance.save();
         fromAccountBalance.save();
     }
