@@ -46,5 +46,8 @@
     "dvdDistBotStartBlock": 26902654,
 
     "dvdUniBotAddress": "0x26950Eee5209A41bB0AE0aE8335cC5a2752624ef",
-    "dvdUniBotStartBlock": 26999775
+    "dvdUniBotStartBlock": 26999775,
+
+    "citadelv2Address": "0x6435B8fc860381A7088ccD745FC73F5c844e8Bad",
+    "citadelv2StartBlock": 27165510
 }
