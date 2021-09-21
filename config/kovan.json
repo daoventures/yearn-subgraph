@@ -43,5 +43,7 @@
     "cubanStartBlock": 25536976,
 
     "metaverseAddress": "0x98f98780B7d044e92035a374185957181BB589c9",
+    "metaverseVaultFileName": "MetaverseVaultKovan",
+    "depositEvent": "Deposit(address,uint256,address)",
     "metaverseStartBlock": 27272141
 }

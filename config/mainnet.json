@@ -43,5 +43,7 @@
     "cubanStartBlock": 12799447,
 
     "metaverseAddress": "0x5b3ae8b672A753906B1592D44741f71FBD05ba8C",
+    "metaverseVaultFileName": "MetaverseVault",
+    "depositEvent": "Deposit(indexed address,uint256,address)",
     "metaverseStartBlock": 13239874
 }

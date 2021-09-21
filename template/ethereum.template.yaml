@@ -5,7 +5,7 @@ schema:
 
 dataSources:
   # Yearn Series
-  ## Yearn Fighter USDT
+  # Yearn Fighter USDT
   - kind: ethereum/contract
     name: YearnFighterUSDT
     network: {{network}}
@@ -528,11 +528,11 @@ dataSources:
         - name: ERC20
           file: ./abis/ERC20.json
         - name: Metaverse
-          file: ./abis/MetaverseVault.json
+          file: ./abis/{{metaverseVaultFileName}}.json
         - name: MetaverseStrategy
           file: ./abis/MetaverseStrategy.json
       eventHandlers:
-        - event: Deposit(address,uint256,address)
+        - event: {{depositEvent}}
           handler: handleMetaverseDeposit
         - event: DistributeLPToken(address,uint256)
           handler: handleMetaverseShareMinted
