@@ -547,14 +547,14 @@ dataSources:
         - event: BuyDVD(indexed address,indexed address,uint256)
           handler: handleDvdUniBotBuyBack
       file: ./src/map/dvdBotMapping.ts
-  
+
   # DAO Vault Citadel V2
   - kind: ethereum/contract
     name: DAOVaultCitadelV2
     network: {{network}}
     source:
       address: '{{citadelv2Address}}'
-      abi: Metaverse
+      abi: CitadelV2
       startBlock: {{citadelv2StartBlock}}
     mapping:
       kind: ethereum/events
@@ -578,7 +578,7 @@ dataSources:
         - name: CitadelV2Strategy
           file: ./abis/CitadelV2Strategy.json
       eventHandlers:
-        - event: Deposit(address,uint256,address)
+        - event: Deposit(indexed address,uint256)
           handler: handleCitadelV2Deposit
         - event: DistributeLPToken(address,uint256)
           handler: handleCitadelV2ShareMinted
