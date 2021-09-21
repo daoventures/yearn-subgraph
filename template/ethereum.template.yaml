@@ -547,4 +547,44 @@ dataSources:
         - event: BuyDVD(indexed address,indexed address,uint256)
           handler: handleDvdUniBotBuyBack
       file: ./src/map/dvdBotMapping.ts
+
+  # DAO Vault Citadel V2
+  - kind: ethereum/contract
+    name: DAOVaultCitadelV2
+    network: {{network}}
+    source:
+      address: '{{citadelv2Address}}'
+      abi: CitadelV2
+      startBlock: {{citadelv2StartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+        - DistributeLPToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: CitadelV2
+          file: ./abis/CitadelV2.json
+        - name: CitadelV2Strategy
+          file: ./abis/CitadelV2Strategy.json
+      eventHandlers:
+        - event: Deposit(indexed address,uint256)
+          handler: handleCitadelV2Deposit
+        - event: DistributeLPToken(address,uint256)
+          handler: handleCitadelV2ShareMinted
+        - event: Withdraw(address,uint256,address,uint256)
+          handler: handleCitadelV2Withdraw
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleCitadelV2ShareTransfer
+      file: ./src/map/citadelv2Mapping.ts
   
