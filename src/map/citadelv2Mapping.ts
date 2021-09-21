@@ -1,7 +1,7 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { CitadelV2, Deposit, DistributeLPToken, Transfer, Withdraw } from "../../generated/DAOVaultCitadelV2/CitadelV2";
 import { Farmer } from "../../generated/schema";
-import { BIGINT_ZERO } from "../utils/constants";
+import { BIGINT_ZERO, ZERO_ADDRESS } from "../utils/constants";
 import { getPrecision, toDecimal } from "../utils/decimals";
 import { getOrCreateAccount, getOrCreateAccountVaultBalance, getOrCreateToken } from "../utils/helpers";
 import { getOrCreateCitadelV2Farmer, getOrCreateTransaction, getOrCreateVaultDeposit, getOrCreateVaultDistributeLPToken, getOrCreateVaultTransfer, getOrCreateVaultWithdrawal } from "../utils/helpers/yearn-farmer/vault";
@@ -338,4 +338,141 @@ export function handleCitadelV2Withdraw(event: Withdraw): void {
    );
 
    farmer.save();
+}
+
+export function handleCitadelV2ShareTransfer(event: Transfer): void {
+    let farmer = getOrCreateCitadelV2Farmer(event.address);
+    farmer.underlyingToken = getOrCreateToken(event.address).id;
+    let fromAccount = getOrCreateAccount(event.params.from.toHexString()); // sender
+    let toAccount = getOrCreateAccount(event.params.to.toHexString()); // recipient
+    let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
+
+    let metaverseContract = CitadelV2.bind(event.address);
+
+    // Price per full share
+    let ppfs = metaverseContract.try_getPricePerFullShare();
+    let ppfsRaw = !ppfs.reverted
+        ? ppfs.value
+        : BIGINT_ZERO;
+    let pricePerFullShareUSD: BigDecimal = toDecimal(
+        ppfsRaw,
+        18
+    );
+
+    // Shares
+    let sharesRaw: BigInt = event.params.value;
+    let shares:BigDecimal = toDecimal(
+        sharesRaw,
+        shareToken.decimals
+    );
+
+    // Calculate shares amount based on price per full share
+    let sharesAmount = (farmer.totalSupplyRaw !== BIGINT_ZERO)
+        ? shares.times(pricePerFullShareUSD)
+        : shares;
+    let sharesAmountRaw = sharesRaw.times(ppfsRaw).div(getPrecision(18));
+
+
+    // Save Transaction Entity
+    let transaction = getOrCreateTransaction(
+        event.transaction.hash.toHexString()
+    );
+    transaction.blockNumber = event.block.number;
+    transaction.timestamp = event.block.timestamp;
+    transaction.transactionHash = event.transaction.hash;
+    transaction.save();
+
+    farmer.transaction = transaction.id;
+    farmer.save();
+
+    // Create Receipient and Sender Account Balance Entity
+    let toAccountBalance = getOrCreateAccountVaultBalance(
+        toAccount.id.concat("-").concat(farmer.id)
+    );
+    let fromAccountBalance = getOrCreateAccountVaultBalance(
+        fromAccount.id.concat("-").concat(farmer.id)
+    )
+
+    // To ensure Transfer event is not for Shares Minted and Shares Burned
+    if(
+        event.params.to.toHexString() != ZERO_ADDRESS &&
+        event.params.from.toHexString() != ZERO_ADDRESS
+    ) {
+        handleCitadelV2TransferTemplate(
+            event, 
+            sharesAmountRaw,
+            sharesAmount,
+            pricePerFullShareUSD,
+            fromAccount.id,
+            toAccount.id,
+            farmer,
+            transaction.id
+        );
+
+        // Update recipient account totals and balances
+        toAccountBalance.account = toAccount.id;
+        toAccountBalance.farmer = farmer.id;
+        toAccountBalance.shareToken = farmer.id;
+        toAccountBalance.underlyingToken = farmer.underlyingToken;
+
+        toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(sharesAmountRaw);
+        toAccountBalance.netDeposits = toDecimal(
+            toAccountBalance.netDepositsRaw, 
+            shareToken.decimals
+        );
+        
+        toAccountBalance.totalReceivedRaw = toAccountBalance.totalReceivedRaw.plus(sharesAmountRaw);
+        toAccountBalance.netDeposits = toDecimal(
+            toAccountBalance.netDepositsRaw,
+            shareToken.decimals
+        );
+
+        toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(sharesRaw);
+        toAccountBalance.shareBalance = toDecimal(
+            toAccountBalance.shareBalanceRaw,
+            shareToken.decimals
+        );
+
+        toAccountBalance.totalSharesReceivedRaw = toAccountBalance.totalSharesReceivedRaw.plus(sharesRaw);
+        toAccountBalance.totalSharesReceived = toDecimal(
+            toAccountBalance.totalSharesReceivedRaw,
+            shareToken.decimals
+        ); 
+
+        // Update sender account total and balances
+        fromAccountBalance.account = fromAccount.id;
+        fromAccountBalance.farmer = farmer.id;
+        fromAccountBalance.shareToken = farmer.id;
+        fromAccountBalance.underlyingToken = farmer.underlyingToken;
+
+        fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(sharesAmountRaw);
+        fromAccountBalance.netDeposits = toDecimal( 
+            fromAccountBalance.netDepositsRaw,
+            shareToken.decimals
+        );
+
+        fromAccountBalance.totalSentRaw = fromAccountBalance.totalSentRaw.plus(sharesAmountRaw);
+        fromAccountBalance.totalSent = toDecimal(
+            fromAccountBalance.totalSentRaw,
+            shareToken.decimals
+        );
+
+      
+        fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(sharesRaw);
+        fromAccountBalance.shareBalance = toDecimal(
+             fromAccountBalance.shareBalanceRaw,
+             shareToken.decimals
+         );
+ 
+        fromAccountBalance.totalSharesSentRaw = fromAccountBalance.totalSharesSentRaw.plus(sharesRaw);
+        fromAccountBalance.totalSharesSent = toDecimal(
+            fromAccountBalance.totalSharesSentRaw,
+            shareToken.decimals
+        );    
+
+        toAccount.save();
+        fromAccount.save();
+        toAccountBalance.save();
+        fromAccountBalance.save();
+    }
 }
