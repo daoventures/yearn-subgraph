@@ -46,5 +46,8 @@
     "dvdDistBotStartBlock": 26902654,
 
     "dvdUniBotAddress": "0x26950Eee5209A41bB0AE0aE8335cC5a2752624ef",
-    "dvdUniBotStartBlock": 26999775
+    "dvdUniBotStartBlock": 26999775,
+
+    "daoStonksAddress": "0x7739933d775bf2ed5eaec76bc61c581a82e25b0c",
+    "daoStonksStartBlock": 27263090
 }
