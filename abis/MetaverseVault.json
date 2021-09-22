@@ -28,7 +28,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "caller",
         "type": "address"
@@ -36,7 +36,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "depositAmt",
+        "name": "amtDeposit",
         "type": "uint256"
       },
       {
@@ -61,7 +61,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "shareMint",
+        "name": "shareMinted",
         "type": "uint256"
       }
     ],
@@ -74,7 +74,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "amtInWETH",
         "type": "uint256"
       }
     ],
@@ -144,7 +144,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "amtInWETH",
         "type": "uint256"
       }
     ],
@@ -155,9 +155,15 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
-        "name": "admin",
+        "name": "oldAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
         "type": "address"
       }
     ],
@@ -168,9 +174,15 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
-        "name": "biconomy",
+        "name": "oldBiconomy",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newBiconomy",
         "type": "address"
       }
     ],
@@ -181,9 +193,15 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
-        "name": "communityWallet",
+        "name": "oldCommunityWallet",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newCommunityWallet",
         "type": "address"
       }
     ],
@@ -213,13 +231,13 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "oldCustomNetworkFeeTier",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "newCustomNetworkFeeTier",
         "type": "uint256"
@@ -283,9 +301,15 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
-        "name": "strategistWallet",
+        "name": "oldStrategistWallet",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newStrategistWallet",
         "type": "address"
       }
     ],
@@ -296,9 +320,15 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
-        "name": "treasuryWallet",
+        "name": "oldTreasuryWallet",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newTreasuryWallet",
         "type": "address"
       }
     ],
@@ -338,6 +368,12 @@
         "internalType": "uint256",
         "name": "fees",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
       }
     ],
     "name": "TransferredOutFees",
@@ -368,7 +404,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "withdrawAmt",
+        "name": "amtWithdraw",
         "type": "uint256"
       },
       {
@@ -380,7 +416,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "sharesBurn",
+        "name": "sharesBurned",
         "type": "uint256"
       }
     ],
@@ -615,7 +651,7 @@
         "type": "bool"
       }
     ],
-    "name": "getAllPool",
+    "name": "getAllPoolInETH",
     "outputs": [
       {
         "internalType": "uint256",
@@ -642,6 +678,19 @@
   {
     "inputs": [],
     "name": "getPricePerFullShare",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTotalPendingDeposits",
     "outputs": [
       {
         "internalType": "uint256",
@@ -700,12 +749,12 @@
       },
       {
         "internalType": "address",
-        "name": "_admin",
+        "name": "_strategist",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_strategist",
+        "name": "_admin",
         "type": "address"
       },
       {

@@ -2,7 +2,7 @@ import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { Deposit, DistributeLPToken, Metaverse, Transfer, Withdraw } from "../../generated/DAOVaultMetaverse/Metaverse";
 import { Farmer } from "../../generated/schema";
 import { BIGINT_ZERO, ZERO_ADDRESS } from "../utils/constants";
-import { toDecimal, toBigInt } from "../utils/decimals";
+import { toDecimal, toBigInt, getPrecision } from "../utils/decimals";
 import { getOrCreateAccount, getOrCreateAccountVaultBalance, getOrCreateMetaverseFarmer, getOrCreateToken } from "../utils/helpers";
 import { getOrCreateTransaction, getOrCreateVaultDeposit, getOrCreateVaultDistributeLPToken, getOrCreateVaultTransfer, getOrCreateVaultWithdrawal } from "../utils/helpers/yearn-farmer/vault";
 
@@ -83,7 +83,7 @@ export function handleMetaverseDeposit(event: Deposit): void {
     // Deposited amount from USDC, USDT or DAI in 18 decimals
     let amountInUSDRaw: BigInt = event.params.depositAmt;
     let depositToken = getOrCreateToken(event.params.tokenDeposit);
-    let amountInUSD: BigDecimal = toDecimal(amountInUSDRaw, depositToken.decimals);
+    let amountInUSD: BigDecimal = toDecimal(amountInUSDRaw, 18);
 
     let transaction = getOrCreateTransaction(
         event.transaction.hash.toHexString()
@@ -136,7 +136,7 @@ export function handleMetaverseShareMinted(event: DistributeLPToken): void {
     let sharesAmount = (farmer.totalSupplyRaw !== BIGINT_ZERO)
         ? shares.times(pricePerFullShareUSD)
         : shares;
-    let sharesAmountRaw = toBigInt(sharesAmount, 18); // Magnified as big as possible
+    let sharesAmountRaw = sharesRaw.times(ppfsRaw).div(getPrecision(18));// Magnified as big as possible
 
     // Update recipient's Account Balance
     let toAccountBalance = getOrCreateAccountVaultBalance(
@@ -259,7 +259,7 @@ export function handleMetaverseWithdraw(event: Withdraw): void {
     let sharesAmount = (farmer.totalSupplyRaw !== BIGINT_ZERO)
         ? shares.times(pricePerFullShareUSD)
         : shares;
-    let sharesAmountRaw = toBigInt(sharesAmount, 18);  
+    let sharesAmountRaw = sharesRaw.times(ppfsRaw).div(getPrecision(18)); 
 
     // Save Withdrawal transaction
     let transaction = getOrCreateTransaction(
@@ -376,7 +376,7 @@ export function handleMetaverseShareTransfer(event: Transfer): void {
     let sharesAmount = (farmer.totalSupplyRaw !== BIGINT_ZERO)
         ? shares.times(pricePerFullShareUSD)
         : shares;
-    let sharesAmountRaw = toBigInt(sharesAmount, 18); 
+    let sharesAmountRaw = sharesRaw.times(ppfsRaw).div(getPrecision(18));
 
 
     // Save Transaction Entity
