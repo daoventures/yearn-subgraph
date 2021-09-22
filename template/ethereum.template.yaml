@@ -5,7 +5,7 @@ schema:
 
 dataSources:
   # Yearn Series
-  ## Yearn Fighter USDT
+  # Yearn Fighter USDT
   - kind: ethereum/contract
     name: YearnFighterUSDT
     network: {{network}}
