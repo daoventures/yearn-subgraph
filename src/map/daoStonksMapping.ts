@@ -1,10 +1,10 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
-import { Deposit, DistributeLPToken } from "../../generated/DAOStonksVault/DAOStonksVault";
+import { DAOStonksVault, Deposit, DistributeLPToken } from "../../generated/DAOStonksVault/DAOStonksVault";
 import { Farmer } from "../../generated/schema";
 import { BIGINT_ZERO } from "../utils/constants";
-import { toDecimal } from "../utils/decimals";
-import { getOrCreateAccount, getOrCreateDAOStonksFarmer, getOrCreateToken } from "../utils/helpers";
-import { getOrCreateTransaction, getOrCreateVaultDeposit } from "../utils/helpers/yearn-farmer/vault";
+import { getPrecision, toDecimal } from "../utils/decimals";
+import { getOrCreateAccount, getOrCreateAccountVaultBalance, getOrCreateDAOStonksFarmer, getOrCreateToken } from "../utils/helpers";
+import { getOrCreateTransaction, getOrCreateVaultDeposit, getOrCreateVaultDistributeLPToken } from "../utils/helpers/yearn-farmer/vault";
 
 function handleDAOStonksDepositTemplate(
     event: Deposit,
@@ -59,5 +59,126 @@ export function handleDAOStonksDeposit(event: Deposit) : void {
     );
 
     farmer.save();
+}
+
+export function handleDAOStonksShareMinted(event: DistributeLPToken): void { 
+    let farmer = getOrCreateDAOStonksFarmer(event.address);
+    let toAccount = getOrCreateAccount(event.params.receiver.toHexString());
+    let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
+
+    let daoStonksContract = DAOStonksVault.bind(event.address);
+
+    // Price per full share
+    let ppfs = daoStonksContract.try_getPricePerFullShare();
+    let ppfsRaw = !ppfs.reverted
+        ? ppfs.value
+        : BIGINT_ZERO;
+    let pricePerFullShareUSD: BigDecimal = toDecimal(
+        ppfsRaw,
+        18
+    );
+
+    // Shares Minted
+    let sharesRaw: BigInt = event.params.shareMinted;
+    let shares:BigDecimal = toDecimal(
+        sharesRaw,
+        shareToken.decimals
+    );
+    
+    let sharesAmount = (farmer.totalSupplyRaw !== BIGINT_ZERO)
+        ? shares.times(pricePerFullShareUSD)
+        : shares;
+    let sharesAmountRaw = sharesRaw.times(ppfsRaw).div(getPrecision(18));// Magnified as big as possible
+
+     // Update recipient's Account Balance
+     let toAccountBalance = getOrCreateAccountVaultBalance(
+        toAccount.id.concat("-").concat(farmer.id)
+    );
+
+    toAccountBalance.account = toAccount.id;
+    toAccountBalance.farmer = farmer.id;
+    toAccountBalance.shareToken = farmer.id;
+    toAccountBalance.underlyingToken = farmer.id;
+
+    toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(sharesAmountRaw);
+    toAccountBalance.netDeposits = toDecimal(
+        toAccountBalance.netDepositsRaw,
+        shareToken.decimals
+    );
+
+    toAccountBalance.totalDepositedRaw = toAccountBalance.totalDepositedRaw.plus(sharesAmountRaw);
+    toAccountBalance.totalDeposited = toDecimal(
+        toAccountBalance.totalDepositedRaw,
+        shareToken.decimals
+    );
+
+    toAccountBalance.totalSharesMintedRaw = toAccountBalance.totalSharesMintedRaw.plus(sharesRaw);
+    toAccountBalance.totalSharesMinted = toDecimal(
+        toAccountBalance.totalSharesMintedRaw,
+        shareToken.decimals
+    );
+
+    toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(sharesRaw);
+    toAccountBalance.shareBalance = toDecimal(
+        toAccountBalance.shareBalanceRaw,
+        shareToken.decimals
+    );
+
+    toAccountBalance.save();
+    
+    // Update Distribute Token Entity
+    let transactionHash = event.transaction.hash.toHexString();
+    let distributeToken = getOrCreateVaultDistributeLPToken(
+        transactionHash.concat("-").concat(toAccount.id)
+    );
+    distributeToken.timestamp = event.block.timestamp;
+    distributeToken.blockNumber = event.block.number;
+    distributeToken.transactionHash = event.transaction.hash;
+
+    distributeToken.totalSharesMintedRaw = event.params.shareMinted;
+    distributeToken.totalSharesMinted = toDecimal(
+        distributeToken.totalSharesMintedRaw,
+        shareToken.decimals
+    );
+
+    distributeToken.amountRaw = sharesAmountRaw,
+        distributeToken.amount = toDecimal(
+            distributeToken.amountRaw,
+            shareToken.decimals
+        );
+
+    distributeToken.pricePerFullShareUSD = pricePerFullShareUSD;
+    distributeToken.pricePerFullShareUSDRaw = ppfsRaw;
+
+    distributeToken.account = toAccount.id;
+
+    // Update Farmer Balance
+    farmer.totalDepositedRaw = farmer.totalDepositedRaw.plus(sharesAmountRaw);
+    farmer.totalDeposited = toDecimal(
+        farmer.totalDepositedRaw,
+        shareToken.decimals
+    );
+
+    farmer.totalSharesMintedRaw = farmer.totalSharesMintedRaw.plus(sharesRaw);
+    farmer.totalSharesMinted = toDecimal(
+        farmer.totalSharesMintedRaw,
+        shareToken.decimals
+    );
+
+    farmer.netDepositsRaw = farmer.totalDepositedRaw.minus(farmer.totalWithdrawnRaw);
+    farmer.netDeposits = toDecimal(
+        farmer.netDepositsRaw,
+        shareToken.decimals
+    );
+
+    farmer.totalActiveSharesRaw = farmer.totalSharesMintedRaw.minus(farmer.totalSharesBurnedRaw);
+    farmer.totalActiveShares = toDecimal(
+        farmer.totalActiveSharesRaw,
+        shareToken.decimals
+    );
+
+    farmer.save();
+    toAccount.save();
+    distributeToken.save();
 }
 
