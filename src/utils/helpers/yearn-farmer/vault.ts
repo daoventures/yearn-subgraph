@@ -31,6 +31,7 @@ import { CompoundFarmer } from "../../../../generated/CompoundFighterUSDT/Compou
 import { HarvestFarmer } from "../../../../generated/HarvestFighterUSDT/HarvestFarmer";
 import { EACAggregatorProxy } from "../../../../generated/DAOVaultCitadel/EACAggregatorProxy";
 import { Metaverse } from "../../../../generated/DAOVaultMetaverse/Metaverse";
+import { DAOStonksVault } from "../../../../generated/DAOStonksVault/DAOStonksVault";
 
 export function getOrCreateFarmer(
   vaultAddress: Address,
@@ -638,6 +639,79 @@ export function getOrCreateMetaverseFarmer(
 ): Farmer {
   let vault = Farmer.load(vaultAddress.toHexString());
   let vaultContract = Metaverse.bind(vaultAddress);
+
+  if(vault == null) {
+    vault = new Farmer(vaultAddress.toHexString());
+
+    // Initialize parse values as BigDecimal 0
+    vault.earnPricePerFullShare = BIGDECIMAL_ZERO;
+    vault.vaultPricePerFullShare = BIGDECIMAL_ZERO;
+    vault.netDeposits = BIGDECIMAL_ZERO;
+    vault.totalDeposited = BIGDECIMAL_ZERO;
+    vault.totalWithdrawn = BIGDECIMAL_ZERO;
+    vault.totalActiveShares = BIGDECIMAL_ZERO;
+    vault.totalSharesMinted = BIGDECIMAL_ZERO;
+    vault.totalSharesBurned = BIGDECIMAL_ZERO;
+    vault.earnBalance = BIGDECIMAL_ZERO;
+    vault.vaultBalance = BIGDECIMAL_ZERO;
+    vault.totalSupply = BIGDECIMAL_ZERO;
+    vault.totalEarnings = BIGDECIMAL_ZERO;
+    vault.pool = BIGDECIMAL_ZERO;
+    vault.earnBalance = BIGDECIMAL_ZERO;
+    vault.vaultBalance = BIGDECIMAL_ZERO;
+
+    // Initialize raw values as BigInt 0
+    vault.netDepositsRaw = BIGINT_ZERO;
+    vault.totalDepositedRaw = BIGINT_ZERO;
+    vault.totalWithdrawnRaw = BIGINT_ZERO;
+    vault.totalActiveSharesRaw = BIGINT_ZERO;
+    vault.totalSharesMintedRaw = BIGINT_ZERO;
+    vault.totalSharesBurnedRaw = BIGINT_ZERO;
+    vault.vaultBalanceRaw = BIGINT_ZERO;
+    vault.totalSupplyRaw = BIGINT_ZERO;
+    vault.totalEarningsRaw = BIGINT_ZERO;
+    vault.earnPricePerFullShareRaw = BIGINT_ZERO;
+    vault.vaultPricePerFullShareRaw = BIGINT_ZERO;
+    vault.poolRaw = BIGINT_ZERO;
+    vault.earnBalanceRaw = BIGINT_ZERO;
+    vault.vaultBalanceRaw = BIGINT_ZERO;
+  }
+
+  let shareToken = getOrCreateToken(vaultAddress);
+  vault.shareToken = shareToken.id;
+
+  if(update) {
+    let strategyAddress = vaultContract.try_strategy();
+    if(!strategyAddress.reverted) {
+        // The vault itself is an ERC20
+        // let shareToken = getOrCreateToken(vaultAddress);
+
+        let totalSupply = vaultContract.try_totalSupply();
+        let pool = vaultContract.try_getAllPoolInUSD(); // Check from code, the result returned in  18 decimals
+
+        vault.poolRaw = !pool.reverted 
+          ? pool.value
+          : vault.poolRaw;
+        vault.totalSupplyRaw = !totalSupply.reverted
+          ? totalSupply.value
+          : vault.totalSupplyRaw;
+        
+        vault.totalSupply = toDecimal(
+          vault.totalSupplyRaw,
+          vaultContract.decimals()
+        );
+        vault.pool = toDecimal(vault.poolRaw, vaultContract.decimals());
+    }
+  }
+  return vault as Farmer;
+}
+
+export function getOrCreateDAOStonksFarmer(
+  vaultAddress: Address,
+  update: boolean = true
+): Farmer {
+  let vault = Farmer.load(vaultAddress.toHexString());
+  let vaultContract = DAOStonksVault.bind(vaultAddress);
 
   if(vault == null) {
     vault = new Farmer(vaultAddress.toHexString());
