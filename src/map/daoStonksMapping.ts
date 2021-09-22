@@ -1,7 +1,7 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { DAOStonksVault, Deposit, DistributeLPToken, Transfer, Withdraw } from "../../generated/DAOStonksVault/DAOStonksVault";
 import { Farmer } from "../../generated/schema";
-import { BIGINT_ZERO } from "../utils/constants";
+import { BIGINT_ZERO, ZERO_ADDRESS } from "../utils/constants";
 import { getPrecision, toDecimal } from "../utils/decimals";
 import { getOrCreateAccount, getOrCreateAccountVaultBalance, getOrCreateDAOStonksFarmer, getOrCreateToken } from "../utils/helpers";
 import { getOrCreateTransaction, getOrCreateVaultDeposit, getOrCreateVaultDistributeLPToken, getOrCreateVaultTransfer, getOrCreateVaultWithdrawal } from "../utils/helpers/yearn-farmer/vault";
@@ -48,6 +48,31 @@ function handleDAOStonksWithdrawTemplate(
     withdraw.transaction = transactionId;
 
     withdraw.save();
+}
+
+function handleDAOStonksTransferTemplate(
+    event: Transfer,
+    amount: BigInt,
+    amountInUSD: BigDecimal,
+    pricePerFullShare: BigDecimal,
+    fromId: string,
+    toId: string,
+    vault: Farmer,
+    transactionId: string
+): void {
+    let transfer = getOrCreateVaultTransfer(transactionId);
+    
+    transfer.farmer = vault.id;
+    transfer.from = fromId;
+    transfer.to = toId;
+    transfer.value = event.params.value;
+    transfer.amount = amount;
+    transfer.totalSupply = vault.totalSupplyRaw;
+    transfer.transaction = event.transaction.hash.toHexString();
+    transfer.amountInUSD = amountInUSD;
+    transfer.pricePerFullShare = pricePerFullShare;
+    
+    transfer.save();
 }
 
 export function handleDAOStonksDeposit(event: Deposit) : void {
@@ -319,5 +344,142 @@ export function handleDAOStonksWithdraw(event: Withdraw): void {
     );
 
     farmer.save();
+}
+
+export function handleDAOStonksShareTransfer(event: Transfer): void {
+    let farmer = getOrCreateDAOStonksFarmer(event.address);
+    farmer.underlyingToken = getOrCreateToken(event.address).id;
+    let fromAccount = getOrCreateAccount(event.params.from.toHexString()); // sender
+    let toAccount = getOrCreateAccount(event.params.to.toHexString()); // recipient
+    let shareToken = getOrCreateToken(Address.fromString(farmer.shareToken));
+
+    let daoStonksContract = DAOStonksVault.bind(event.address);
+
+    // Price per full share
+    let ppfs = daoStonksContract.try_getPricePerFullShare();
+    let ppfsRaw = !ppfs.reverted
+        ? ppfs.value
+        : BIGINT_ZERO;
+    let pricePerFullShareUSD: BigDecimal = toDecimal(
+        ppfsRaw,
+        18
+    );
+
+    // Shares
+    let sharesRaw: BigInt = event.params.value;
+    let shares:BigDecimal = toDecimal(
+        sharesRaw,
+        shareToken.decimals
+    );
+
+    // Calculate shares amount based on price per full share
+    let sharesAmount = (farmer.totalSupplyRaw !== BIGINT_ZERO)
+        ? shares.times(pricePerFullShareUSD)
+        : shares;
+    let sharesAmountRaw = sharesRaw.times(ppfsRaw).div(getPrecision(18));
+
+
+    // Save Transaction Entity
+    let transaction = getOrCreateTransaction(
+        event.transaction.hash.toHexString()
+    );
+    transaction.blockNumber = event.block.number;
+    transaction.timestamp = event.block.timestamp;
+    transaction.transactionHash = event.transaction.hash;
+    transaction.save();
+
+    farmer.transaction = transaction.id;
+    farmer.save();
+
+    // Create Receipient and Sender Account Balance Entity
+    let toAccountBalance = getOrCreateAccountVaultBalance(
+        toAccount.id.concat("-").concat(farmer.id)
+    );
+    let fromAccountBalance = getOrCreateAccountVaultBalance(
+        fromAccount.id.concat("-").concat(farmer.id)
+    )
+
+    // To ensure Transfer event is not for Shares Minted and Shares Burned
+    if(
+        event.params.to.toHexString() != ZERO_ADDRESS &&
+        event.params.from.toHexString() != ZERO_ADDRESS
+    ) {
+        handleDAOStonksTransferTemplate(
+            event, 
+            sharesAmountRaw,
+            sharesAmount,
+            pricePerFullShareUSD,
+            fromAccount.id,
+            toAccount.id,
+            farmer,
+            transaction.id
+        );
+
+        // Update recipient account totals and balances
+        toAccountBalance.account = toAccount.id;
+        toAccountBalance.farmer = farmer.id;
+        toAccountBalance.shareToken = farmer.id;
+        toAccountBalance.underlyingToken = farmer.underlyingToken;
+
+        toAccountBalance.netDepositsRaw = toAccountBalance.netDepositsRaw.plus(sharesAmountRaw);
+        toAccountBalance.netDeposits = toDecimal(
+            toAccountBalance.netDepositsRaw, 
+            shareToken.decimals
+        );
+        
+        toAccountBalance.totalReceivedRaw = toAccountBalance.totalReceivedRaw.plus(sharesAmountRaw);
+        toAccountBalance.netDeposits = toDecimal(
+            toAccountBalance.netDepositsRaw,
+            shareToken.decimals
+        );
+
+        toAccountBalance.shareBalanceRaw = toAccountBalance.shareBalanceRaw.plus(sharesRaw);
+        toAccountBalance.shareBalance = toDecimal(
+            toAccountBalance.shareBalanceRaw,
+            shareToken.decimals
+        );
+
+        toAccountBalance.totalSharesReceivedRaw = toAccountBalance.totalSharesReceivedRaw.plus(sharesRaw);
+        toAccountBalance.totalSharesReceived = toDecimal(
+            toAccountBalance.totalSharesReceivedRaw,
+            shareToken.decimals
+        ); 
+
+        // Update sender account total and balances
+        fromAccountBalance.account = fromAccount.id;
+        fromAccountBalance.farmer = farmer.id;
+        fromAccountBalance.shareToken = farmer.id;
+        fromAccountBalance.underlyingToken = farmer.underlyingToken;
+
+        fromAccountBalance.netDepositsRaw = fromAccountBalance.netDepositsRaw.minus(sharesAmountRaw);
+        fromAccountBalance.netDeposits = toDecimal( 
+            fromAccountBalance.netDepositsRaw,
+            shareToken.decimals
+        );
+
+        fromAccountBalance.totalSentRaw = fromAccountBalance.totalSentRaw.plus(sharesAmountRaw);
+        fromAccountBalance.totalSent = toDecimal(
+            fromAccountBalance.totalSentRaw,
+            shareToken.decimals
+        );
+
+      
+        fromAccountBalance.shareBalanceRaw = fromAccountBalance.shareBalanceRaw.minus(sharesRaw);
+        fromAccountBalance.shareBalance = toDecimal(
+             fromAccountBalance.shareBalanceRaw,
+             shareToken.decimals
+         );
+ 
+        fromAccountBalance.totalSharesSentRaw = fromAccountBalance.totalSharesSentRaw.plus(sharesRaw);
+        fromAccountBalance.totalSharesSent = toDecimal(
+            fromAccountBalance.totalSharesSentRaw,
+            shareToken.decimals
+        );    
+
+        toAccount.save();
+        fromAccount.save();
+        toAccountBalance.save();
+        fromAccountBalance.save();
+    }
 }
 
