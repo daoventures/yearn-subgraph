@@ -5,7 +5,7 @@ schema:
 
 dataSources:
   # Yearn Series
-  ## Yearn Fighter USDT
+  # Yearn Fighter USDT
   - kind: ethereum/contract
     name: YearnFighterUSDT
     network: {{network}}
@@ -548,3 +548,42 @@ dataSources:
           handler: handleDvdUniBotBuyBack
       file: ./src/map/dvdBotMapping.ts
   
+  # DAO Stonks
+  - kind: ethereum/contract
+    name: DAOStonksVault
+    network: {{network}}
+    source:
+      address: '{{daoStonksAddress}}'
+      abi: DAOStonksVault
+      startBlock: {{daoStonksStartBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - AccountVaultBalance
+        - Token
+        - Transfer
+        - Deposit
+        - Withdrawal
+        - Transaction
+        - FarmerToken
+        - DistributeLPToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: DAOStonksVault
+          file: ./abis/DAOStonks.json
+        - name: DAOStonksStrategy
+          file: ./abis/DAOStonksStrategy.json
+      eventHandlers:
+        - event: Deposit(address,uint256,address)
+          handler: handleDAOStonksDeposit
+        - event: DistributeLPToken(address,uint256)
+          handler: handleDAOStonksShareMinted
+        - event: Withdraw(address,uint256,address,uint256)
+          handler: handleDAOStonksWithdraw
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleDAOStonksShareTransfer
+      file: ./src/map/daoStonksMapping.ts

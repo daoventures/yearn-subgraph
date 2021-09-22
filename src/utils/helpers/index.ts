@@ -15,7 +15,9 @@ export {
   getOrCreateCitadelFarmer,
   getOrCreateElonFarmer,
   getOrCreateCubanFarmer,
-  getOrCreateMoneyPrinterFarmer
+  getOrCreateMoneyPrinterFarmer,
+  getOrCreateMetaverseFarmer,
+  getOrCreateDAOStonksFarmer
 } from "./yearn-farmer/vault";
 
 export {
